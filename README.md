@@ -4,98 +4,268 @@
 
 Build, manage, and embed AI chatbots powered by Google Gemini. No subscription fees, no data lock-in.
 
-![Dashboard Preview](https://github.com/user-attachments/assets/placeholder-dashboard.png)
+> ⭐ If you find this project useful, please consider giving it a star!
+
+## Table of Contents
+
+- [Features](#-features)
+- [Deploy](#-one-click-deploy)
+- [Architecture](#-technical-architecture)
+- [API Documentation](#-api-documentation)
+- [Usage Examples](#-usage-examples)
+- [Security](#-security)
+- [Troubleshooting](#-troubleshooting)
+- [License](#-license)
+
+![Dashboard Preview](/public/dashboard.png)
 
 ## ✨ Features
 
-- **🚀 Self-Hosted Foundation**: Next.js 14+, MongoDB, and NextAuth. You own the code and the data.
-- **🧠 Gemini AI Powered**: integrated with Google's state-of-the-art Gemini models (1.5 Flash, 1.5 Pro, 2.0 Flash).
-- **🎨 Visual Bot Builder**: Customize system prompts, temperature, and themes (colors, welcome messages).
+- **🚀 Self-Hosted Foundation**: Next.js 16+, MongoDB, and NextAuth. You own the code and the data.
+- **🧠 Gemini AI Powered**: Integrated with Google's state-of-the-art Gemini models (2.0 Flash, 1.5 Pro, 1.5 Flash).
+- **🎨 Visual Bot Builder**: Customize system prompts, temperature, and themes (colors, welcome messages, icons).
+- **📚 Knowledge Base (RAG)**: Upload PDF & Word documents. Automatic vector indexing with MongoDB Atlas Vector Search.
 - **📝 Rich Text Support**: Full Markdown support for bold, italics, lists, and code blocks in chat.
-- **📊 Dynamic Dashboard**: Real-time analytics for your bots and knowledge base.
-- **💬 Universal Chat Engine**: Multi-turn conversation support with LangChain.
-- **🔌 Embed Anywhere**: One-line `<script>` tag to add your bot to any website.
-- **🌍 Public Share Pages**: Standalone, themed chat pages for every bot.
-- **🔐 Secure**: Environment-based admin authentication.
+- **📊 Real-Time Analytics**: Track bot usage, message count, and performance metrics.
+- **💬 Multi-Turn Conversations**: Full conversation history with LangChain integration.
+- **🔌 Embed Anywhere**: One-line `<script>` tag to add your bot to any website with domain validation.
+- **🌍 Public Share Pages**: Standalone, fully-themed chat pages for every bot.
+- **🛡️ Advanced Security**: Domain whitelisting, IP-based rate limiting, and admin authentication.
+- **🚀 Serverless Ready**: Optimized for Vercel with Mongoose connection pooling.
 
 ## 🚀 One-Click Deploy
 
-Deploy directly to Vercel with a single click:
+### Step 1: Fork the Repository
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fyour-username%2Fbot-cms&env=ADMIN_EMAIL,ADMIN_PASSWORD,AUTH_SECRET,MONGODB_URI,GEMINI_API_KEY)
+First, fork this repository to your GitHub account:
+
+[![Fork on GitHub](https://img.shields.io/badge/Fork%20on-GitHub-blue?logo=github&style=for-the-badge)](https://github.com/your-username/botx/fork)
+
+> A fork creates your own copy of the repository. You need to do this to deploy to Vercel.
+
+### Step 2: Deploy to Vercel
+
+After forking, deploy directly to Vercel with a single click:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FYOUR_GITHUB_USERNAME%2Fbotx&env=ADMIN_EMAIL,ADMIN_PASSWORD,AUTH_SECRET,MONGODB_URI,GEMINI_API_KEY)
+
+> Replace `YOUR_GITHUB_USERNAME` with your actual GitHub username.
+
+### Step 3: Configure Environment Variables
+
+During deployment, Vercel will prompt you to add these environment variables:
+
+| Variable         | Required | Description                                              | Example                                            |
+| ---------------- | -------- | -------------------------------------------------------- | -------------------------------------------------- |
+| `ADMIN_EMAIL`    | ✅       | Admin login email                                        | `admin@example.com`                                |
+| `ADMIN_PASSWORD` | ✅       | Admin login password                                     | `MySecurePass123!`                                 |
+| `AUTH_SECRET`    | ✅       | JWT encryption key (generate: `openssl rand -base64 32`) | `abc123...`                                        |
+| `MONGODB_URI`    | ✅       | MongoDB connection string                                | `mongodb+srv://user:pass@cluster.mongodb.net/botx` |
+| `GEMINI_API_KEY` | ✅       | Google Gemini API key                                    | `AIzaSy...`                                        |
+
+> **Getting Your API Keys:**
+>
+> - MongoDB URI: Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+> - Gemini API Key: Get it free from [Google AI Studio](https://aistudio.google.com/)
 
 ### 🛠 Technical Architecture
 
-- **Framework**: Next.js 14+ (App Router)
-- **Database**: MongoDB (Mongoose) - *Optimized for serverless: Implements Mongoose connection caching to prevent connection pool exhaustion on Vercel.*
-- **Auth**: NextAuth.js (Credentials)
-- **AI**: Google Gemini Pro & Flash
-- **Vector Search (RAG)**:
-  - **Implementation**: MongoDB Atlas Vector Search.
-  - **Setup**: **Automated** (Index created automatically on first bot creation).
-  - **Scale**: Enterprise-grade (serverless).
+| Component         | Technology                  | Version       |
+| ----------------- | --------------------------- | ------------- |
+| **Framework**     | Next.js (App Router)        | 16.1.4        |
+| **Database**      | MongoDB (Mongoose)          | 8.21.0        |
+| **Auth**          | NextAuth.js                 | 5.0.0-beta.30 |
+| **AI/LLM**        | Google Gemini API           | Latest        |
+| **Vector Search** | MongoDB Atlas Vector Search | Native        |
+| **UI Library**    | React                       | 19.2.3        |
+| **Styling**       | Tailwind CSS                | 4             |
+| **AI Framework**  | LangChain                   | 1.2.10        |
 
-## 🛠️ Local Development
+**Key Features**:
 
-### Prerequisites
+- Mongoose connection pooling for serverless (Vercel)
+- Automated vector index creation on first bot deployment
+- Enterprise-grade RAG with MongoDB Atlas Vector Search
+- No subscription required for AI models (BYOK - Bring Your Own Key)
 
-- Node.js 18+
-- MongoDB Database (local or Atlas)
-- Google Gemini API Key
+## 📚 API Documentation
 
-### Setup
+### Bot Endpoints
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/your-username/bot-cms.git
-   cd bot-cms
-   ```
+```bash
+# List all bots
+GET /api/bots
+Authorization: Admin session required
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
+# Create a new bot
+POST /api/bots
+Body: { name, systemPrompt, temperature, aiModel, theme }
 
-3. **Configure Environment**
-   
-   Set the following **Environment Variables** in your hosting dashboard (e.g., Vercel Project Settings) or in a `.env` file for local development:
-   
-   | Variable | Description |
-   |----------|-------------|
-   | `ADMIN_EMAIL` | Email for admin login (e.g., `admin@example.com`) |
-   | `ADMIN_PASSWORD` | Password for admin login |
-   | `AUTH_SECRET` | Random string for session encryption (`openssl rand -base64 32`) |
-   | `MONGODB_URI` | Your MongoDB connection string |
-   | `GEMINI_API_KEY` | Your Google API Key from [AI Studio](https://aistudio.google.com/) |
+# Get bot details
+GET /api/bots/[id]
 
-4. **Run Development Server**
-   ```bash
-   npm run dev
-   ```
+# Update bot
+PUT /api/bots/[id]
 
-   Visit `http://localhost:3000` to see your app.
+# Delete bot
+DELETE /api/bots/[id]
+```
+
+### Chat Endpoint (Public)
+
+```bash
+# Send message to bot
+POST /api/chat
+Body: {
+  botId: "publicId or _id",
+  message: "User message",
+  history: [{ role: "user", content: "..." }]
+}
+Response: { reply: "Bot response" }
+```
+
+### Knowledge Base Endpoints
+
+```bash
+# Upload document
+POST /api/bots/[id]/knowledge
+Body: FormData with file
+
+# Delete document
+DELETE /api/bots/[id]/knowledge/[docId]
+```
+
+## 💻 Usage Examples
+
+### Embed Bot on Website
+
+Add this single line to your website's HTML:
+
+```html
+<script src="https://yourdomain.com/embed.js?botId=YOUR_BOT_PUBLIC_ID"></script>
+```
+
+The bot widget will appear at the bottom-right corner.
+
+### Create Bot via API
+
+```javascript
+const response = await fetch("/api/bots", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    name: "Customer Support Bot",
+    systemPrompt: "You are a helpful customer support agent.",
+    temperature: 0.7,
+    aiModel: "gemini-2.0-flash",
+    theme: {
+      primaryColor: "#8b5cf6",
+      chatTitle: "Support Bot",
+      welcomeMessage: "Hello! How can I help?",
+    },
+  }),
+});
+const { bot } = await response.json();
+console.log("Bot created:", bot.publicId);
+```
+
+### Send Message to Bot
+
+```javascript
+const response = await fetch("/api/chat", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    botId: "YOUR_BOT_PUBLIC_ID",
+    message: "What are your business hours?",
+    history: [],
+  }),
+});
+const { reply } = await response.json();
+console.log("Bot says:", reply);
+```
 
 ## 🧩 Project Structure
 
 ```
 src/
 ├── app/
-│   ├── api/            # API Routes (Bots, Chat, Auth)
-│   ├── dashboard/      # Admin Dashboard Pages
-│   ├── share/          # Public Chat Pages
-│   └── login/          # Login Page
-├── models/             # Mongoose Schemas
-├── lib/                # Database & Utils
-└── components/         # UI Components
+│   ├── api/                 # API Routes
+│   │   ├── bots/           # Bot management endpoints
+│   │   ├── chat/           # Public chat endpoint
+│   │   ├── auth/           # Authentication routes
+│   │   └── admin/          # Admin utilities
+│   ├── dashboard/          # Admin Dashboard Pages
+│   ├── share/              # Public Bot Chat Pages
+│   ├── login/              # Admin Login
+│   └── globals.css         # Global styles
+├── models/                 # Mongoose Schemas
+│   ├── bot.model.ts        # Bot configuration
+│   ├── knowledge-base.model.ts
+│   └── knowledge-chunk.model.ts
+├── lib/
+│   ├── db.ts              # MongoDB connection with pooling
+│   ├── gemini.ts          # Gemini API integration
+│   ├── atlas.ts           # Vector search utilities
+│   └── rate-limit.ts      # Rate limiting logic
+├── components/            # React components
+│   ├── message-renderer.tsx
+│   └── dashboard/         # Dashboard UI components
+├── auth.ts               # NextAuth configuration
+└── middleware.ts         # Route protection
+
 public/
-└── embed.js            # Widget Embedding Script
+├── embed.js             # Widget embedding script
+└── favicon.ico
 ```
 
-## 🔒 Security Note
+## 🔐 Security
 
-- **Admin Access**: This CMS uses simple environment-based authentication for a single admin user. It is designed for personal or internal team use.
-- **API Keys**: Your Gemini API key is stored securely on the server and never exposed to the client. Public chat requests are proxied through `/api/chat`.
+✅ **Admin Authentication**: Environment-based credentials with JWT sessions
+✅ **API Keys**: Gemini API key stored server-side, never exposed to client
+✅ **Domain Whitelisting**: Control which domains can embed your bot
+✅ **Rate Limiting**: IP-based rate limiting on chat endpoint (prevents abuse)
+✅ **Bot Status Control**: Enable/disable bots without deletion
+✅ **Serverless Safe**: Connection pooling prevents database exhaustion on Vercel
 
-## 📄 License
+> **For Production**: Use strong passwords, enable MongoDB IP whitelisting, and enable HTTPS.
 
-MIT © Kishore M
+## 🐛 Troubleshooting
+
+### "MONGODB_URI is not defined"
+
+- Ensure `.env.local` exists in root directory
+- Check the variable name is exactly `MONGODB_URI`
+- Restart dev server after adding env variables
+
+### "GEMINI_API_KEY is not defined"
+
+- Get a free API key from [Google AI Studio](https://aistudio.google.com/)
+- Add it to `.env.local` and restart the server
+- Check you're using Gemini API, not Google Cloud API
+
+### Bot chat returns 404
+
+- Verify bot is marked as `isActive: true`
+- Check bot `publicId` or `_id` matches the request
+- If using domain whitelisting, verify your domain is in the list
+
+### Vector search not working
+
+- Index is created automatically on first bot creation
+- For manual index setup: `POST /api/admin/setup-index`
+- Verify MongoDB Atlas has vector search enabled (M10+ cluster)
+
+### Rate limit errors (429)
+
+- The API limits requests by IP address
+- Wait a few minutes before retrying
+- Use a reverse proxy or cache in production
+
+## License
+
+MIT © kishorem
+
+---
+
+**Have questions?** Open an [issue](https://github.com/your-username/botx/issues) on GitHub!
