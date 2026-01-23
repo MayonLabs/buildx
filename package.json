@@ -2,6 +2,8 @@
   "name": "botx",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
+  "author": "Kishorem",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
