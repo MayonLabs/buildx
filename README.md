@@ -90,27 +90,6 @@ During deployment, Vercel will prompt you to add these environment variables:
 
 ## 📚 API Documentation
 
-### Bot Endpoints
-
-```bash
-# List all bots
-GET /api/bots
-Authorization: Admin session required
-
-# Create a new bot
-POST /api/bots
-Body: { name, systemPrompt, temperature, aiModel, theme }
-
-# Get bot details
-GET /api/bots/[id]
-
-# Update bot
-PUT /api/bots/[id]
-
-# Delete bot
-DELETE /api/bots/[id]
-```
-
 ### Chat Endpoint (Public)
 
 ```bash
@@ -124,16 +103,7 @@ Body: {
 Response: { reply: "Bot response" }
 ```
 
-### Knowledge Base Endpoints
 
-```bash
-# Upload document
-POST /api/bots/[id]/knowledge
-Body: FormData with file
-
-# Delete document
-DELETE /api/bots/[id]/knowledge/[docId]
-```
 
 ## 💻 Usage Examples
 
@@ -142,32 +112,15 @@ DELETE /api/bots/[id]/knowledge/[docId]
 Add this single line to your website's HTML:
 
 ```html
-<script src="https://yourdomain.com/embed.js?botId=YOUR_BOT_PUBLIC_ID"></script>
+<script 
+  src="https://yourdomain.com/embed.js" 
+  data-bot-id="YOUR_BOT_PUBLIC_ID"
+></script>
 ```
 
 The bot widget will appear at the bottom-right corner.
 
-### Create Bot via API
 
-```javascript
-const response = await fetch("/api/bots", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    name: "Customer Support Bot",
-    systemPrompt: "You are a helpful customer support agent.",
-    temperature: 0.7,
-    aiModel: "gemini-2.0-flash",
-    theme: {
-      primaryColor: "#8b5cf6",
-      chatTitle: "Support Bot",
-      welcomeMessage: "Hello! How can I help?",
-    },
-  }),
-});
-const { bot } = await response.json();
-console.log("Bot created:", bot.publicId);
-```
 
 ### Send Message to Bot
 
@@ -254,7 +207,7 @@ public/
 
 - Index is created automatically on first bot creation
 - For manual index setup: `POST /api/admin/setup-index`
-- Verify MongoDB Atlas has vector search enabled (M10+ cluster)
+- Verify MongoDB Atlas has vector search enabled (M0+ cluster)
 
 ### Rate limit errors (429)
 
