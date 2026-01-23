@@ -35,23 +35,13 @@ Build, manage, and embed AI chatbots powered by Google Gemini. No subscription f
 
 ## 🚀 One-Click Deploy
 
-### Step 1: Fork the Repository
+Deploy Botx to Vercel with a single click.  
+Vercel will automatically fork this repository into your GitHub account.
 
-First, fork this repository to your GitHub account:
 
-[![Fork on GitHub](https://img.shields.io/badge/Fork%20on-GitHub-blue?logo=github&style=for-the-badge)](https://github.com/your-username/botx/fork)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kishorem/botx&project-name=botx&framework=nextjs&env=ADMIN_EMAIL,ADMIN_PASSWORD,AUTH_SECRET,MONGODB_URI,GEMINI_API_KEY&envDescription=Required%20environment%20variables%20for%20Botx&envLink=https://github.com/kishorem/botx#-one-click-deploy)
 
-> A fork creates your own copy of the repository. You need to do this to deploy to Vercel.
-
-### Step 2: Deploy to Vercel
-
-After forking, deploy directly to Vercel with a single click:
-
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FYOUR_GITHUB_USERNAME%2Fbotx&env=ADMIN_EMAIL,ADMIN_PASSWORD,AUTH_SECRET,MONGODB_URI,GEMINI_API_KEY)
-
-> Replace `YOUR_GITHUB_USERNAME` with your actual GitHub username.
-
-### Step 3: Configure Environment Variables
+### Configure Environment Variables
 
 During deployment, Vercel will prompt you to add these environment variables:
 
@@ -63,6 +53,7 @@ During deployment, Vercel will prompt you to add these environment variables:
 | `MONGODB_URI`    | ✅       | MongoDB connection string                                | `mongodb+srv://user:pass@cluster.mongodb.net/botx` |
 | `GEMINI_API_KEY` | ✅       | Google Gemini API key                                    | `AIzaSy...`                                        |
 
+
 > **Getting Your API Keys:**
 >
 > - MongoDB URI: Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
@@ -72,7 +63,7 @@ During deployment, Vercel will prompt you to add these environment variables:
 
 | Component         | Technology                  | Version       |
 | ----------------- | --------------------------- | ------------- |
-| **Framework**     | Next.js (App Router)        | 16.1.4        |
+| **Framework**     | Next.js (App Router)        | 16.x        |
 | **Database**      | MongoDB (Mongoose)          | 8.21.0        |
 | **Auth**          | NextAuth.js                 | 5.0.0-beta.30 |
 | **AI/LLM**        | Google Gemini API           | Latest        |
@@ -221,4 +212,4 @@ MIT © kishorem
 
 ---
 
-**Have questions?** Open an [issue](https://github.com/your-username/botx/issues) on GitHub!
+**Have questions?** Open an [issue](https://github.com/kishorem/botx/issues) on GitHub!
