@@ -9,7 +9,7 @@ Build, manage, and embed AI chatbots powered by Google Gemini. No subscription f
 ## Table of Contents
 
 - [Features](#-features)
-- [Deploy](#-one-click-deploy)
+- [Deploy](#-deploy)
 - [Architecture](#-technical-architecture)
 - [API Documentation](#-api-documentation)
 - [Usage Examples](#-usage-examples)
@@ -33,13 +33,35 @@ Build, manage, and embed AI chatbots powered by Google Gemini. No subscription f
 - **🛡️ Advanced Security**: Domain whitelisting, IP-based rate limiting, and admin authentication.
 - **🚀 Serverless Ready**: Optimized for Vercel with Mongoose connection pooling.
 
-## 🚀 One-Click Deploy
-
-Deploy Botx to Vercel with a single click.  
-Vercel will automatically fork this repository into your GitHub account.
+## 🚀 Deploy
 
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/kishorem/botx&project-name=botx&framework=nextjs&env=ADMIN_EMAIL,ADMIN_PASSWORD,AUTH_SECRET,MONGODB_URI,GEMINI_API_KEY&envDescription=Required%20environment%20variables%20for%20Botx&envLink=https://github.com/kishorem/botx#-one-click-deploy)
+To ensure you can update your deployment later, Botx must be deployed from **your own fork**.  
+This deploy flow guarantees Vercel uses *your repository*, not a temporary copy.
+
+### Step 1: Fork the Repository
+
+Click the button below to fork this repository to your GitHub account.
+
+[![Fork on GitHub](https://img.shields.io/badge/Fork%20on-GitHub-blue?logo=github&style=for-the-badge)](https://github.com/kishorem/botx/fork)
+
+---
+
+### Step 2: Deploy Your Fork
+
+1. Copy the URL of your forked repository  
+   (example: `https://github.com/yourname/botx`)
+2. Click the button below and paste the URL
+
+[![Deploy My Bot](https://img.shields.io/badge/Deploy%20My%20Bot-Launch-blue?style=for-the-badge&logo=rocket)](https://botx.kishorem.in/deploy.html)
+
+
+
+> 🔒 **Security note**
+>
+> The deploy portal only redirects you to Vercel with your repository URL.
+> No data is stored, logged, or modified.
+
 
 ### Configure Environment Variables
 
@@ -53,11 +75,24 @@ During deployment, Vercel will prompt you to add these environment variables:
 | `MONGODB_URI`    | ✅       | MongoDB connection string                                | `mongodb+srv://user:pass@cluster.mongodb.net/botx` |
 | `GEMINI_API_KEY` | ✅       | Google Gemini API key                                    | `AIzaSy...`                                        |
 
-
 > **Getting Your API Keys:**
 >
 > - MongoDB URI: Create a free cluster at [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
 > - Gemini API Key: Get it free from [Google AI Studio](https://aistudio.google.com/)
+
+
+## 🔄 Updating Botx
+
+Botx deployments do not auto-update from this repository.
+
+After the initial deployment, any updates pushed to your fork will automatically trigger
+a redeploy on Vercel.
+
+To get the latest changes:
+1. Pull updates from `kishorem/botx` into your fork
+2. Push the changes to your GitHub repository
+
+
 
 ### 🛠 Technical Architecture
 
