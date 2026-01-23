@@ -19,6 +19,7 @@ import { useState } from "react";
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "My Bots", href: "/dashboard/bots", icon: Bot },
+    { name: "API Keys", href: "/dashboard/api-keys", icon: Key },
     { name: "Documentation", href: "/dashboard/docs", icon: BookOpen },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
 ];
