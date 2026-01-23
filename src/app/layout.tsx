@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Botx - Self-Hosted AI Chatbot Builder",
   description: "Create, configure, and deploy AI chatbots with ease. Open-source and self-hosted.",
+  icons: {
+    icon: "/Botx_logo.svg",
+  },
 };
 
 export default function RootLayout({

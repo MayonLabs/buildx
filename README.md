@@ -1,8 +1,18 @@
-# 🤖 Botx
-
-**The Open Source, Self-Hosted AI Chatbot Builder.**
-
-Build, manage, and embed AI chatbots powered by Google Gemini. No subscription fees, no data lock-in.
+<div align="center">
+  <img src="public/Botx_logo.svg" alt="Botx" height="60" />
+  <h1>Botx</h1>
+  <p>
+    <strong>The Open Source, Self-Hosted AI Chatbot Builder.</strong>
+  </p>
+  <p>
+    Build, manage, and embed AI chatbots powered by Google Gemini. No subscription fees, no data lock-in.
+  </p>
+  <p>
+    <a href="./LICENSE">
+      <img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT">
+    </a>
+  </p>
+</div>
 
 > ⭐ If you find this project useful, please consider giving it a star!
 
@@ -32,48 +42,43 @@ Build, manage, and embed AI chatbots powered by Google Gemini. No subscription f
 - **🌍 Public Share Pages**: Standalone, fully-themed chat pages for every bot.
 - **🛡️ Advanced Security**: Domain whitelisting, IP-based rate limiting, and admin authentication.
 - **🚀 Serverless Ready**: Optimized for Vercel with Mongoose connection pooling.
+## 🚀 Deploy (2 Minutes)
 
-## 🚀 Deploy
+Botx uses a **"Fork & Deploy"** workflow. This ensures you fully own the code and can pull future updates (new features/bug fixes) with a single click.
 
+### 1️⃣ Fork the Repository
+Create your own copy of Botx in your GitHub account.
 
-To ensure you can update your deployment later, Botx must be deployed from **your own fork**.  
-This deploy flow guarantees Vercel uses *your repository*, not a temporary copy.
+[![Fork on GitHub](https://img.shields.io/badge/Step%201-Fork%20Repository-181717?style=for-the-badge&logo=github)](https://github.com/kishore00777/botx/fork)
 
-### Step 1: Fork the Repository
+### 2️⃣ Deploy Your Fork
+Copy the URL of your new fork (e.g., `https://github.com/yourname/botx`) and paste it into our setup wizard.
 
-Click the button below to fork this repository to your GitHub account.
-
-[![Fork on GitHub](https://img.shields.io/badge/Fork%20on-GitHub-blue?logo=github&style=for-the-badge)](https://github.com/kishorem/botx/fork)
+[![Deploy Wizard](https://img.shields.io/badge/Step%202-Launch%20Deploy%20Wizard-0070f3?style=for-the-badge&logo=vercel)](https://botx.kishorem.in/deploy.html)
 
 ---
 
-### Step 2: Deploy Your Fork
+### 🔑 Environment Variables
+The wizard will ask for these values. Click the links to get them for free.
 
-1. Copy the URL of your forked repository  
-   (example: `https://github.com/yourname/botx`)
-2. Click the button below and paste the URL
+| Variable | Description | Where to get it |
+| :--- | :--- | :--- |
+| `ADMIN_EMAIL` | Your login email | You decide this. |
+| `ADMIN_PASSWORD` | Your login password | You decide this. |
+| `AUTH_SECRET` | Session encryption key | [Generate one here](https://generate-secret.vercel.app/32) or run `openssl rand -base64 32` |
+| `MONGODB_URI` | Database connection | [Get free cluster from MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register) |
+| `GEMINI_API_KEY` | Google AI Model Key | [Get free key from Google AI Studio](https://aistudio.google.com/app/apikey) |
 
-[![Deploy My Bot](https://img.shields.io/badge/Deploy%20My%20Bot-Launch-blue?style=for-the-badge&logo=rocket)](https://botx.kishorem.in/deploy.html)
+> 🔒 **Security Note:** The Deploy Wizard runs entirely in your browser. It simply formats the Vercel import link for you—we never see your keys.
 
+---
 
+## 🔄 How to Update
+Since you deployed your own fork, updating is easy:
+1.  Go to your repository on GitHub.
+2.  Click **"Sync Fork"** (under the green Code button).
+3.  Vercel will detect the change and automatically redeploy the latest version!
 
-> 🔒 **Security note**
->
-> The deploy portal only redirects you to Vercel with your repository URL.
-> No data is stored, logged, or modified.
-
-
-### Configure Environment Variables
-
-During deployment, Vercel will prompt you to add these environment variables:
-
-| Variable         | Required | Description                                              | Example                                            |
-| ---------------- | -------- | -------------------------------------------------------- | -------------------------------------------------- |
-| `ADMIN_EMAIL`    | ✅       | Admin login email                                        | `admin@example.com`                                |
-| `ADMIN_PASSWORD` | ✅       | Admin login password                                     | `MySecurePass123!`                                 |
-| `AUTH_SECRET`    | ✅       | JWT encryption key (generate: `openssl rand -base64 32`) | `abc123...`                                        |
-| `MONGODB_URI`    | ✅       | MongoDB connection string                                | `mongodb+srv://user:pass@cluster.mongodb.net/botx` |
-| `GEMINI_API_KEY` | ✅       | Google Gemini API key                                    | `AIzaSy...`                                        |
 
 > **Getting Your API Keys:**
 >

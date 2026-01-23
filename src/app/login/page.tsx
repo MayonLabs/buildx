@@ -44,20 +44,8 @@ export default function LoginPage() {
                 <div className="bg-zinc-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-zinc-700/50 p-8">
                     {/* Logo/Brand */}
                     <div className="text-center mb-8">
-                        <div className="w-16 h-16 bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-                            <svg
-                                className="w-8 h-8 text-white"
-                                fill="none"
-                                stroke="currentColor"
-                                viewBox="0 0 24 24"
-                            >
-                                <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    strokeWidth={2}
-                                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-                                />
-                            </svg>
+                        <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center">
+                            <img src="/Botx_logo.svg" alt="Botx" className="w-16 h-16" />
                         </div>
                         <h1 className="text-2xl font-bold text-white mb-2">Botx</h1>
                         <p className="text-zinc-400 text-sm">
