@@ -21,11 +21,7 @@ export default async function SharePage({ params }: PageProps) {
     const botDoc = bot as unknown as {
         name: string;
         publicId: string;
-        theme: {
-            primaryColor: string;
-            chatTitle: string;
-            welcomeMessage: string;
-        };
+        theme: any;
     };
 
     return (

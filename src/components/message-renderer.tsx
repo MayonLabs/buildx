@@ -11,8 +11,9 @@ interface MessageRendererProps {
 export function MessageRenderer({ content, role }: MessageRendererProps) {
     return (
         <div
-            className={`prose prose-sm max-w-none break-words ${role === "user" ? "prose-invert text-white" : "prose-zinc text-zinc-800 dark:text-zinc-200 dark:prose-invert"
+            className={`prose prose-sm max-w-none break-words ${role === "user" ? "prose-invert" : "prose-zinc dark:prose-invert"
                 } prose-p:my-1 prose-pre:bg-black/50 prose-pre:p-2 prose-pre:rounded-lg prose-code:bg-black/20 prose-code:px-1 prose-code:rounded prose-code:before:content-none prose-code:after:content-none`}
+            style={{ color: 'inherit' }}
         >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
                 {content}

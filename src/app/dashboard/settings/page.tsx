@@ -3,6 +3,7 @@
 
 import { Settings, Database, Loader2, AlertCircle } from "lucide-react";
 import { useState } from "react";
+import { SystemHealth } from "@/components/dashboard/system-health";
 
 export default function SettingsPage() {
     const [loadingIndex, setLoadingIndex] = useState(false);
@@ -39,7 +40,11 @@ export default function SettingsPage() {
                 </p>
             </div>
 
+
+
+
             <div className="space-y-6">
+                <SystemHealth />
 
                 {/* General Settings */}
                 <div className="bg-zinc-900/50 backdrop-blur-xl rounded-2xl border border-zinc-800 p-6">

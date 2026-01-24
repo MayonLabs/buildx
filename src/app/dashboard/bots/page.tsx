@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Bot, MoreVertical, Pencil, Trash2, Code, ExternalLink } from "lucide-react";
+import { Plus, Bot, MoreVertical, Pencil, Trash2, Code, ExternalLink, Copy } from "lucide-react";
 
 interface BotData {
     _id: string;
@@ -13,7 +13,8 @@ interface BotData {
     isActive: boolean;
     createdAt: string;
     theme: {
-        primaryColor: string;
+        launcher: { bgColor: string };
+        primaryColor?: string; // Legacy
     };
 }
 
@@ -115,11 +116,11 @@ export default function BotsPage() {
                                 <div className="flex items-center gap-3">
                                     <div
                                         className="w-12 h-12 rounded-xl flex items-center justify-center"
-                                        style={{ backgroundColor: bot.theme?.primaryColor + "20" }}
+                                        style={{ backgroundColor: (bot.theme?.launcher?.bgColor || bot.theme?.primaryColor || "#8b5cf6") + "20" }}
                                     >
                                         <Bot
                                             className="w-6 h-6"
-                                            style={{ color: bot.theme?.primaryColor || "#8b5cf6" }}
+                                            style={{ color: bot.theme?.launcher?.bgColor || bot.theme?.primaryColor || "#8b5cf6" }}
                                         />
                                     </div>
                                     <div>
@@ -151,6 +152,17 @@ export default function BotsPage() {
                                                 <ExternalLink className="w-4 h-4" />
                                                 Preview
                                             </Link>
+                                            <button
+                                                onClick={() => {
+                                                    navigator.clipboard.writeText(bot.publicId);
+                                                    setOpenMenu(null);
+                                                    alert("Bot ID copied to clipboard!");
+                                                }}
+                                                className="flex items-center gap-2 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-700 hover:text-white w-full"
+                                            >
+                                                <Copy className="w-4 h-4" />
+                                                Copy Bot ID
+                                            </button>
                                             <button
                                                 onClick={() => {
                                                     navigator.clipboard.writeText(
