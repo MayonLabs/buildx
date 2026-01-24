@@ -226,7 +226,16 @@ public/
 
 - Get a free API key from [Google AI Studio](https://aistudio.google.com/)
 - Add it to `.env.local` and restart the server
+- Get a free API key from [Google AI Studio](https://aistudio.google.com/)
+- Add it to `.env.local` and restart the server
 - Check you're using Gemini API, not Google Cloud API
+
+### "MongoServerError: bad auth"
+- **Check your password**: Did you replace `<password>` with your actual password?
+  - ❌ `mongodb+srv://admin:<mypassword>@...` (Don't use < >)
+  - ✅ `mongodb+srv://admin:mypassword@...`
+- **Check your username**: Is it correct?
+- **Check IP Access List**: In Atlas, go to Network Access -> Add IP Address -> Allow Access from Anywhere (for testing).
 
 ### Bot chat returns 404
 

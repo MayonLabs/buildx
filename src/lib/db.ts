@@ -37,10 +37,11 @@ async function dbConnect(): Promise<typeof mongoose> {
     if (!cached.promise) {
         const opts = {
             bufferCommands: false,
+            dbName: "botx",
         };
 
         cached.promise = mongoose.connect(MONGODB_URI!, opts).then((mongoose) => {
-            console.log("✅ MongoDB connected successfully");
+            console.log("✅ MongoDB connected successfully to 'botx'");
             return mongoose;
         });
     }

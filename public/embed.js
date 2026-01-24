@@ -12,134 +12,166 @@
     return;
   }
 
-  // Configuration
-  const config = {
-    position: script.getAttribute('data-position') || 'bottom-right',
-    primaryColor: script.getAttribute('data-color') || '#8b5cf6',
-  };
-
-  // Get the base URL from the script src
+  // Base URL
   const scriptSrc = script.src;
   const baseUrl = scriptSrc.substring(0, scriptSrc.lastIndexOf('/'));
 
-  // Create styles
-  const styles = document.createElement('style');
-  styles.textContent = `
-    .botx-launcher {
-      position: fixed;
-      ${config.position.includes('bottom') ? 'bottom: 20px;' : 'top: 20px;'}
-      ${config.position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
-      width: 60px;
-      height: 60px;
-      border-radius: 50%;
-      background: ${config.primaryColor};
-      border: none;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform 0.2s, box-shadow 0.2s;
-      z-index: 9999;
-    }
-    .botx-launcher:hover {
-      transform: scale(1.1);
-      box-shadow: 0 6px 30px rgba(0,0,0,0.4);
-    }
-    .botx-launcher svg {
-      width: 28px;
-      height: 28px;
-      fill: white;
-    }
-    .botx-iframe-container {
-      position: fixed;
-      ${config.position.includes('bottom') ? 'bottom: 90px;' : 'top: 90px;'}
-      ${config.position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
-      width: 380px;
-      height: 550px;
-      border-radius: 16px;
-      overflow: hidden;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3);
-      z-index: 9998;
-      display: none;
-      background: #18181b;
-    }
-    .botx-iframe-container.open {
-      display: block;
-      animation: botcms-slideIn 0.3s ease-out;
-    }
-    .botx-iframe {
-      width: 100%;
-      height: 100%;
-      border: none;
-    }
-    @keyframes botcms-slideIn {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
+  // Fetch Bot Configuration
+  fetch(`${baseUrl}/api/bots/public/${botId}`)
+    .then(response => {
+      if (!response.ok) throw new Error('Failed to load bot config');
+      return response.json();
+    })
+    .then(data => {
+      initWidget(data.config);
+    })
+    .catch(err => {
+      console.error('Bot CMS: Error initializing widget', err);
+      // Fallback or exit
+    });
+
+  function initWidget(botConfig) {
+    const theme = botConfig.theme || {};
+    const position = botConfig.widgetPosition || 'bottom-right';
+
+    // Default Theme Fallbacks
+    const launcherColor = theme.launcher?.bgColor || theme.primaryColor || '#8b5cf6';
+    const launcherIconColor = theme.launcher?.iconColor || '#ffffff';
+
+    // Create styles for Launcher and Container
+    const styles = document.createElement('style');
+    styles.textContent = `
+      .botx-launcher {
+        position: fixed;
+        ${position.includes('bottom') ? 'bottom: 20px;' : 'top: 20px;'}
+        ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
+        width: 60px;
+        height: 60px;
+        border-radius: ${theme.launcher?.borderRadius || '50%'};
+        background: ${launcherColor};
+        border: none;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
+        z-index: 2147483647; /* Max z-index */
+        font-family: ${theme.common?.fontFamily || 'inherit'};
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
+      .botx-launcher:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
       }
-    }
-    @media (max-width: 480px) {
-      .botcms-iframe-container {
-        width: calc(100vw - 40px);
-        height: calc(100vh - 120px);
-        ${config.position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
+      .botx-launcher svg {
+        width: 28px;
+        height: 28px;
+        color: ${launcherIconColor};
+        stroke: ${launcherIconColor};
       }
-    }
-  `;
-  document.head.appendChild(styles);
+      .botx-iframe-container {
+        position: fixed;
+        ${position.includes('bottom') ? 'bottom: 90px;' : 'top: 90px;'}
+        ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
+        width: 380px;
+        height: 600px;
+        max-height: calc(100vh - 120px);
+        border-radius: ${theme.common?.borderRadius || '16px'};
+        overflow: hidden;
+        box-shadow: ${theme.common?.shadow || '0 12px 40px rgba(0,0,0,0.12)'};
+        z-index: 2147483646;
+        display: none;
+        background: transparent;
+        font-family: ${theme.common?.fontFamily || 'inherit'};
+      }
+      .botx-iframe-container.open {
+        display: block;
+        animation: botcms-slideIn 0.3 cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      .botx-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        background: transparent;
+      }
+      @keyframes botcms-slideIn {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      @media (max-width: 480px) {
+        .botx-iframe-container {
+          width: calc(100vw - 40px);
+          height: calc(100vh - 120px);
+          ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
+        }
+      }
+    `;
+    document.head.appendChild(styles);
 
-  // Create launcher button
-  const launcher = document.createElement('button');
-  launcher.className = 'botx-launcher';
-  launcher.innerHTML = `
-    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-      <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-      <circle cx="8" cy="10" r="1.5"/>
-      <circle cx="12" cy="10" r="1.5"/>
-      <circle cx="16" cy="10" r="1.5"/>
-    </svg>
-  `;
-  document.body.appendChild(launcher);
+    // Create launcher button
+    const launcher = document.createElement('button');
+    launcher.className = 'botx-launcher';
+    launcher.setAttribute('aria-label', 'Chat with us');
 
-  // Create iframe container
-  const iframeContainer = document.createElement('div');
-  iframeContainer.className = 'botx-iframe-container';
+    // Default Icon (Bot)
+    const chatIcon = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/>
+      </svg>
+    `;
 
-  const iframe = document.createElement('iframe');
-  iframe.className = 'botx-iframe';
-  iframe.src = `${baseUrl}/share/${botId}`;
-  iframe.title = 'Chat';
+    // Close Icon (X)
+    const closeIcon = `
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18"/><path d="m6 6 12 12"/>
+      </svg>
+    `;
 
-  iframeContainer.appendChild(iframe);
-  document.body.appendChild(iframeContainer);
+    launcher.innerHTML = theme.launcher?.icon || chatIcon;
+    document.body.appendChild(launcher);
 
-  // Toggle chat
-  let isOpen = false;
-  launcher.addEventListener('click', function () {
-    isOpen = !isOpen;
-    iframeContainer.classList.toggle('open', isOpen);
+    // Create iframe container
+    const iframeContainer = document.createElement('div');
+    iframeContainer.className = 'botx-iframe-container';
 
-    // Update icon
-    if (isOpen) {
-      launcher.innerHTML = `
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
-        </svg>
-      `;
-    } else {
-      launcher.innerHTML = `
-        <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/>
-          <circle cx="8" cy="10" r="1.5"/>
-          <circle cx="12" cy="10" r="1.5"/>
-          <circle cx="16" cy="10" r="1.5"/>
-        </svg>
-      `;
-    }
-  });
+    // Determine iframe src (pass minimal rendering hints via query params if needed, 
+    // but the page itself should fetch config or we pass config via postMessage)
+    // For now, simpler to let the page fetch config too or rely on session? 
+    // Public page should fetch public config.
+    const iframe = document.createElement('iframe');
+    iframe.className = 'botx-iframe';
+    iframe.src = `${baseUrl}/share/${botId}?embed=true`;
+    iframe.title = 'Chat Widget';
+
+    iframeContainer.appendChild(iframe);
+    document.body.appendChild(iframeContainer);
+
+    // Toggle logic
+    let isOpen = false;
+    launcher.addEventListener('click', function () {
+      isOpen = !isOpen;
+      iframeContainer.classList.toggle('open', isOpen);
+
+      if (isOpen) {
+        launcher.innerHTML = theme.launcher?.closeIcon || closeIcon;
+      } else {
+        launcher.innerHTML = theme.launcher?.icon || chatIcon;
+      }
+    });
+
+    // Listen for close messages from iframe
+    window.addEventListener('message', function (event) {
+      if (event.data === 'botx-close-widget') {
+        isOpen = false;
+        iframeContainer.classList.remove('open');
+        launcher.innerHTML = theme.launcher?.icon || chatIcon;
+      }
+    });
+  }
 })();

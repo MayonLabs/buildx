@@ -22,11 +22,11 @@ import {
   Moon,
   Sun,
   User,
-  Send,
   Plus,
 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
-import { MessageRenderer } from "@/components/message-renderer";
+import { DesignTab } from "@/components/dashboard/bot-editor/design-tab";
+import { SecurityTab } from "@/components/dashboard/bot-editor/security-tab";
 
 interface BotData {
   _id: string;
@@ -39,9 +39,70 @@ interface BotData {
   widgetPosition: "bottom-right" | "bottom-left" | "top-right" | "top-left";
   isActive: boolean;
   theme: {
-    primaryColor: string;
-    chatTitle: string;
-    welcomeMessage: string;
+    launcher: {
+      bgColor: string;
+      iconColor: string;
+      icon?: string;
+      closeIcon?: string;
+      borderRadius?: string;
+    };
+    header: {
+      bgColor: string;
+      textColor: string;
+      title: string;
+      titleFont?: { size?: string; weight?: string; family?: string };
+      icon?: string;
+      iconColor?: string;
+      iconBgColor?: string;
+    };
+    chatWindow?: {
+      backgroundColor?: string;
+      footerBackgroundColor?: string;
+      backgroundImage?: string;
+    };
+    userMessage: {
+      bgColor: string;
+      textColor: string;
+      showAvatar: boolean;
+      avatarIcon?: string;
+      borderRadius?: string;
+      font?: { size?: string; weight?: string; family?: string };
+    };
+    botMessage: {
+      bgColor: string;
+      textColor: string;
+      showAvatar: boolean;
+      avatarIcon?: string;
+      borderRadius?: string;
+      font?: { size?: string; weight?: string; family?: string };
+    };
+    inputArea?: {
+      backgroundColor?: string;
+      textColor?: string;
+      placeholderColor?: string;
+      font?: { size?: string; weight?: string; family?: string };
+    };
+    sendButton?: {
+      backgroundColor?: string;
+      iconColor?: string;
+      icon?: string;
+    };
+    common: {
+      fontFamily: string;
+      borderRadius: string;
+      shadow: string;
+    };
+    showBranding: boolean;
+    welcomeMessage?: string;
+    welcomeMessageStyle?: {
+      color?: string;
+      fontSize?: string;
+      fontWeight?: string;
+      fontFamily?: string;
+    };
+    // Legacy mapping helpers
+    primaryColor?: string;
+    chatTitle?: string;
   };
 }
 
@@ -87,7 +148,7 @@ export default function BotEditorPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    "prompt" | "model" | "knowledge" | "embed"
+    "prompt" | "model" | "knowledge" | "design" | "security"
   >("prompt");
   const [copied, setCopied] = useState(false);
   const [newDomain, setNewDomain] = useState("");
@@ -111,11 +172,66 @@ export default function BotEditorPage() {
         if (!botData.widgetPosition) botData.widgetPosition = "bottom-right";
         // Ensure defaults exist for theme properties
         if (!botData.theme) botData.theme = {};
-        botData.theme.primaryColor = botData.theme.primaryColor || "#8b5cf6";
-        botData.theme.chatTitle =
-          botData.theme.chatTitle || botData.name || "Chat Bot";
-        botData.theme.welcomeMessage =
-          botData.theme.welcomeMessage || "Hi there! How can I help you?";
+
+        // Initialize Granular Theme (Migrate from legacy if needed)
+        const primary = botData.theme.primaryColor || "#8b5cf6";
+        const title = botData.theme.chatTitle || botData.name || "Chat with us";
+        const welcome = botData.theme.welcomeMessage || "Hello! How can I help you?";
+
+        botData.theme = {
+          // Preserve all existing theme properties first
+          ...botData.theme,
+          launcher: {
+            bgColor: botData.theme.launcher?.bgColor || primary,
+            iconColor: botData.theme.launcher?.iconColor || "#ffffff",
+            icon: botData.theme.launcher?.icon,
+            closeIcon: botData.theme.launcher?.closeIcon,
+            borderRadius: botData.theme.launcher?.borderRadius,
+            ...botData.theme.launcher,
+          },
+          header: {
+            bgColor: botData.theme.header?.bgColor || primary,
+            textColor: botData.theme.header?.textColor || "#ffffff",
+            title: botData.theme.header?.title || title,
+            ...botData.theme.header,
+          },
+          chatWindow: {
+            backgroundColor: botData.theme.chatWindow?.backgroundColor,
+            footerBackgroundColor: botData.theme.chatWindow?.footerBackgroundColor,
+            backgroundImage: botData.theme.chatWindow?.backgroundImage,
+            ...botData.theme.chatWindow,
+          },
+          userMessage: {
+            bgColor: botData.theme.userMessage?.bgColor || "#3b82f6",
+            textColor: botData.theme.userMessage?.textColor || "#ffffff",
+            showAvatar: botData.theme.userMessage?.showAvatar ?? false,
+            ...botData.theme.userMessage,
+          },
+          botMessage: {
+            bgColor: botData.theme.botMessage?.bgColor || "#f3f4f6",
+            textColor: botData.theme.botMessage?.textColor || "#1f2937",
+            showAvatar: botData.theme.botMessage?.showAvatar ?? true,
+            ...botData.theme.botMessage,
+          },
+          inputArea: {
+            ...botData.theme.inputArea,
+          },
+          sendButton: {
+            ...botData.theme.sendButton,
+          },
+          common: {
+            fontFamily: botData.theme.common?.fontFamily || "Inter, sans-serif",
+            borderRadius: botData.theme.common?.borderRadius || "0.75rem",
+            shadow: botData.theme.common?.shadow || "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+            ...botData.theme.common,
+          },
+          showBranding: botData.theme.showBranding ?? true,
+          welcomeMessage: welcome,
+          welcomeMessageStyle: botData.theme.welcomeMessageStyle,
+          // Keep legacy for now
+          primaryColor: primary,
+          chatTitle: title
+        };
 
         setBot(botData);
       } catch (error) {
@@ -232,17 +348,14 @@ export default function BotEditorPage() {
   // Embed Code Copy
   const handleCopyCode = () => {
     if (!bot) return;
-    const code = `<script src="${
-      window.location.origin
-    }/embed.js" data-bot-id="${bot.publicId}"${
-      bot.theme.primaryColor !== "#8b5cf6"
+    const code = `<script src="${window.location.origin
+      }/embed.js" data-bot-id="${bot.publicId}"${bot.theme.primaryColor !== "#8b5cf6"
         ? ` data-color="${bot.theme.primaryColor}"`
         : ""
-    }${
-      bot.widgetPosition !== "bottom-right"
+      }${bot.widgetPosition !== "bottom-right"
         ? ` data-position="${bot.widgetPosition}"`
         : ""
-    }></script>`;
+      }></script>`;
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -265,71 +378,6 @@ export default function BotEditorPage() {
       ...bot,
       allowedDomains: bot.allowedDomains.filter((d) => d !== domain),
     });
-  };
-
-  // Preview State
-  const [previewMessages, setPreviewMessages] = useState<
-    { role: "user" | "assistant"; content: string }[]
-  >([]);
-  const [previewInput, setPreviewInput] = useState("");
-  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
-
-  // Initialize/Reset Preview
-  useEffect(() => {
-    if (bot?.theme?.welcomeMessage) {
-      setPreviewMessages([
-        { role: "assistant", content: bot.theme.welcomeMessage },
-      ]);
-    }
-  }, [bot?.theme?.welcomeMessage]);
-
-  const handlePreviewSend = async () => {
-    if (!previewInput.trim() || !bot || isPreviewLoading) return;
-
-    const userMsg = previewInput.trim();
-    setPreviewInput("");
-    const newHistory = [
-      ...previewMessages,
-      { role: "user" as const, content: userMsg },
-    ];
-    setPreviewMessages(newHistory);
-    setIsPreviewLoading(true);
-
-    try {
-      const res = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          message: userMsg,
-          botId: bot.publicId,
-          history: previewMessages, // Send previous history context
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        setPreviewMessages([
-          ...newHistory,
-          { role: "assistant", content: data.message },
-        ]);
-      } else {
-        const error = await res.json();
-        setPreviewMessages([
-          ...newHistory,
-          {
-            role: "assistant",
-            content: `Error: ${error.error || "Failed to get response"}`,
-          },
-        ]);
-      }
-    } catch (error) {
-      setPreviewMessages([
-        ...newHistory,
-        { role: "assistant", content: "Error: Failed to connect to chat API." },
-      ]);
-    } finally {
-      setIsPreviewLoading(false);
-    }
   };
 
   if (loading)
@@ -355,11 +403,10 @@ export default function BotEditorPage() {
                 {bot.name}
               </h1>
               <span
-                className={`text-xs px-2 py-0.5 rounded-full border ${
-                  bot.isActive
-                    ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-                    : "bg-zinc-800 border-zinc-700 text-zinc-400"
-                }`}
+                className={`text-xs px-2 py-0.5 rounded-full border ${bot.isActive
+                  ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+                  : "bg-zinc-800 border-zinc-700 text-zinc-400"
+                  }`}
               >
                 {bot.isActive ? "Active" : "Inactive"}
               </span>
@@ -387,16 +434,16 @@ export default function BotEditorPage() {
           { id: "prompt", label: "Prompt", icon: Terminal },
           { id: "model", label: "Model", icon: Bot },
           { id: "knowledge", label: "Knowledge", icon: Brain },
-          { id: "embed", label: "Embed", icon: Code },
+          { id: "design", label: "Design", icon: Layout },
+          { id: "security", label: "Security", icon: Globe },
         ].map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-1 justify-center ${
-              activeTab === tab.id
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-            }`}
+            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-1 justify-center ${activeTab === tab.id
+              ? "bg-zinc-800 text-white shadow-sm"
+              : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
+              }`}
           >
             <tab.icon className="w-4 h-4" />
             {tab.label}
@@ -405,9 +452,9 @@ export default function BotEditorPage() {
       </div>
 
       {/* Content Area */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 gap-8">
         {/* Main Form */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -428,6 +475,31 @@ export default function BotEditorPage() {
                     onChange={(e) => setBot({ ...bot, name: e.target.value })}
                     className="w-full px-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-white focus:ring-2 focus:ring-violet-500"
                   />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-zinc-300 mb-2">
+                    Bot Public ID (Use this for API)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={bot.publicId}
+                      readOnly
+                      className="w-full pl-4 pr-12 py-3 bg-zinc-900 border border-zinc-800 rounded-xl text-zinc-400 font-mono text-sm focus:ring-2 focus:ring-violet-500 outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        navigator.clipboard.writeText(bot.publicId);
+                        setCopied(true);
+                        setTimeout(() => setCopied(false), 2000);
+                      }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-zinc-500 hover:text-white bg-zinc-800/50 hover:bg-zinc-700 rounded-lg transition-colors"
+                      title="Copy ID"
+                    >
+                      {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-zinc-300 mb-2">
@@ -460,14 +532,12 @@ export default function BotEditorPage() {
                       onClick={() =>
                         setBot({ ...bot, isActive: !bot.isActive })
                       }
-                      className={`w-12 h-6 rounded-full transition-colors relative ${
-                        bot.isActive ? "bg-emerald-500" : "bg-zinc-700"
-                      }`}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${bot.isActive ? "bg-emerald-500" : "bg-zinc-700"
+                        }`}
                     >
                       <div
-                        className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${
-                          bot.isActive ? "left-7" : "left-1"
-                        }`}
+                        className={`w-4 h-4 bg-white rounded-full absolute top-1 transition-transform ${bot.isActive ? "left-7" : "left-1"
+                          }`}
                       />
                     </button>
                   </div>
@@ -486,11 +556,10 @@ export default function BotEditorPage() {
                     {AI_MODELS.map((model) => (
                       <label
                         key={model.id}
-                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
-                          bot.aiModel === model.id
-                            ? "bg-violet-500/10 border-violet-500 text-white"
-                            : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
-                        }`}
+                        className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${bot.aiModel === model.id
+                          ? "bg-violet-500/10 border-violet-500 text-white"
+                          : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700"
+                          }`}
                       >
                         <input
                           type="radio"
@@ -547,9 +616,8 @@ export default function BotEditorPage() {
 
                   <div className="flex flex-col items-center justify-center gap-4">
                     <label
-                      className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-xl cursor-pointer hover:border-violet-500 hover:bg-zinc-800/50 transition-all ${
-                        uploading ? "opacity-50 pointer-events-none" : ""
-                      }`}
+                      className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-zinc-700 rounded-xl cursor-pointer hover:border-violet-500 hover:bg-zinc-800/50 transition-all ${uploading ? "opacity-50 pointer-events-none" : ""
+                        }`}
                     >
                       <div className="flex flex-col items-center justify-center pt-5 pb-6">
                         {uploading ? (
@@ -633,413 +701,26 @@ export default function BotEditorPage() {
               </div>
             )}
 
-            {/* EMBED TAB */}
-            {activeTab === "embed" && (
-              <div className="space-y-8">
-                {/* Appearance */}
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Layout className="w-4 h-4" /> Appearance
-                  </h3>
-                  <div className="grid grid-cols-1 gap-6">
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-2">
-                        Theme Color
-                      </label>
-                      <div className="flex flex-wrap gap-2 items-center">
-                        {THEME_COLORS.map((color) => (
-                          <button
-                            key={color}
-                            type="button"
-                            onClick={() =>
-                              setBot({
-                                ...bot,
-                                theme: { ...bot.theme, primaryColor: color },
-                              })
-                            }
-                            className={`w-8 h-8 rounded-full transition-transform hover:scale-110 ${
-                              bot.theme.primaryColor === color
-                                ? "ring-2 ring-white ring-offset-2 ring-offset-zinc-900"
-                                : ""
-                            }`}
-                            style={{ backgroundColor: color }}
-                          />
-                        ))}
-                        <label className="w-8 h-8 rounded-full bg-zinc-800 border-2 border-dashed border-zinc-600 flex items-center justify-center cursor-pointer hover:border-zinc-400 hover:text-white text-zinc-500 transition-colors">
-                          <Plus className="w-4 h-4" />
-                          <input
-                            type="color"
-                            className="invisible w-0 h-0 opacity-0"
-                            value={bot.theme.primaryColor}
-                            onChange={(e) =>
-                              setBot({
-                                ...bot,
-                                theme: {
-                                  ...bot.theme,
-                                  primaryColor: e.target.value,
-                                },
-                              })
-                            }
-                          />
-                        </label>
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-2">
-                          Chat Title
-                        </label>
-                        <input
-                          type="text"
-                          value={bot.theme.chatTitle}
-                          onChange={(e) =>
-                            setBot({
-                              ...bot,
-                              theme: {
-                                ...bot.theme,
-                                chatTitle: e.target.value,
-                              },
-                            })
-                          }
-                          className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium text-zinc-400 mb-2">
-                          Widget Position
-                        </label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {WIDGET_POSITIONS.map((pos) => (
-                            <label
-                              key={pos.id}
-                              className={`cursor-pointer flex items-center justify-center px-3 py-2 rounded-lg border text-xs font-medium transition-all ${
-                                bot.widgetPosition === pos.id
-                                  ? "bg-violet-500/10 border-violet-500 text-violet-400"
-                                  : "bg-zinc-900 border-zinc-800 text-zinc-400 hover:border-zinc-700 hover:text-zinc-300"
-                              }`}
-                            >
-                              <input
-                                type="radio"
-                                name="widgetPosition"
-                                value={pos.id}
-                                checked={bot.widgetPosition === pos.id}
-                                onChange={(e) =>
-                                  setBot({
-                                    ...bot,
-                                    widgetPosition: e.target.value as any,
-                                  })
-                                }
-                                className="hidden"
-                              />
-                              {pos.label}
-                            </label>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-zinc-400 mb-2">
-                        Welcome Message
-                      </label>
-                      <input
-                        type="text"
-                        value={bot.theme.welcomeMessage}
-                        onChange={(e) =>
-                          setBot({
-                            ...bot,
-                            theme: {
-                              ...bot.theme,
-                              welcomeMessage: e.target.value,
-                            },
-                          })
-                        }
-                        className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
+            {/* NEW TABS */}
+            {activeTab === "design" && (
+              <DesignTab
+                bot={bot}
+                setBot={setBot}
+                handleCopyCode={handleCopyCode}
+                copied={copied}
+              />
+            )}
 
-                <hr className="border-zinc-800" />
-
-                {/* Security */}
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Globe className="w-4 h-4" /> Security
-                  </h3>
-                  <div className="mb-4">
-                    <label className="block text-xs font-medium text-zinc-400 mb-2">
-                      Allowed Domains (Optional)
-                      <span className="block text-[10px] text-zinc-500 font-normal">
-                        Leave empty to allow all domains. Add full domain (e.g.
-                        "myapp.com").
-                      </span>
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="text"
-                        value={newDomain}
-                        onChange={(e) => setNewDomain(e.target.value)}
-                        onKeyDown={(e) =>
-                          e.key === "Enter" && (e.preventDefault(), addDomain())
-                        }
-                        placeholder="example.com"
-                        className="flex-1 px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-sm text-white"
-                      />
-                      <button
-                        type="button"
-                        onClick={addDomain}
-                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-white rounded-lg text-sm"
-                      >
-                        Add
-                      </button>
-                    </div>
-                  </div>
-
-                  {bot.allowedDomains.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {bot.allowedDomains.map((domain) => (
-                        <span
-                          key={domain}
-                          className="px-2 py-1 bg-zinc-800 rounded-md text-xs text-zinc-300 flex items-center gap-2"
-                        >
-                          {domain}
-                          <button
-                            onClick={() => removeDomain(domain)}
-                            className="text-zinc-500 hover:text-white"
-                          >
-                            ×
-                          </button>
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </div>
-
-                <hr className="border-zinc-800" />
-
-                {/* Embed Code */}
-                <div>
-                  <h3 className="text-sm font-bold text-zinc-500 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Code className="w-4 h-4" /> Integration
-                  </h3>
-                  <p className="text-sm text-zinc-400 mb-3">
-                    Copy this code and paste it into your website's{" "}
-                    <code>&lt;body&gt;</code> tag.
-                  </p>
-                  <div className="relative bg-zinc-950 border border-zinc-900 rounded-xl p-4 font-mono text-xs text-zinc-400 overflow-x-auto">
-                    <code className="block whitespace-pre-wrap break-all">
-                      {`<script src="${
-                        typeof window !== "undefined"
-                          ? window.location.origin
-                          : ""
-                      }/embed.js" data-bot-id="${bot.publicId}"${
-                        bot.theme.primaryColor !== "#8b5cf6"
-                          ? ` data-color="${bot.theme.primaryColor}"`
-                          : ""
-                      }${
-                        bot.widgetPosition !== "bottom-right"
-                          ? ` data-position="${bot.widgetPosition}"`
-                          : ' data-position="bottom-right"'
-                      }></script>`}
-                    </code>
-                    <button
-                      type="button"
-                      onClick={handleCopyCode}
-                      className="absolute top-2 right-2 p-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-white transition-colors"
-                    >
-                      {copied ? (
-                        <Check className="w-4 h-4 text-emerald-400" />
-                      ) : (
-                        <Copy className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
+            {activeTab === "security" && (
+              <SecurityTab
+                bot={bot}
+                newDomain={newDomain}
+                setNewDomain={setNewDomain}
+                addDomain={addDomain}
+                removeDomain={removeDomain}
+              />
             )}
           </form>
-        </div>
-
-        {/* Live Preview */}
-        <div className="lg:col-span-1">
-          <div className="sticky top-8">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-zinc-500">
-                Live Preview
-              </h3>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() =>
-                    setPreviewMessages([
-                      {
-                        role: "assistant",
-                        content: bot.theme?.welcomeMessage || "Hi!",
-                      },
-                    ])
-                  }
-                  className="text-xs text-zinc-500 hover:text-zinc-300 flex items-center gap-1"
-                >
-                  <Bot className="w-3 h-3" /> Reset
-                </button>
-              </div>
-            </div>
-
-            <div className="rounded-2xl shadow-xl overflow-hidden border h-[600px] flex flex-col relative w-full max-w-sm mx-auto transition-colors bg-zinc-900 border-zinc-800">
-              {/* Chat Header */}
-              <div
-                className="p-4 flex items-center justify-between transition-colors"
-                style={{
-                  backgroundColor: bot.theme?.primaryColor || "#8b5cf6",
-                }}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <Bot className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-white text-sm">
-                      {bot.theme?.chatTitle || "Chat Bot"}
-                    </h4>
-                    <p className="text-xs text-white/70">Powered by Botx</p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Chat Messages */}
-              <div className="flex-1 p-4 space-y-4 overflow-y-auto bg-zinc-950/50">
-                {previewMessages.length === 0 && (
-                  <div className="text-center py-12">
-                    <div
-                      className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor:
-                          (bot.theme?.primaryColor || "#8b5cf6") + "20",
-                      }}
-                    >
-                      <Bot
-                        className="w-8 h-8"
-                        style={{ color: bot.theme?.primaryColor || "#8b5cf6" }}
-                      />
-                    </div>
-                    <p className="text-lg mb-2 text-zinc-300">
-                      {bot.theme?.welcomeMessage || "Hi!"}
-                    </p>
-                    <p className="text-zinc-500 text-sm">Ask me anything!</p>
-                  </div>
-                )}
-                {previewMessages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex gap-3 ${
-                      msg.role === "user" ? "justify-end" : "justify-start"
-                    }`}
-                  >
-                    {msg.role === "assistant" && (
-                      <div
-                        className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                        style={{
-                          backgroundColor:
-                            (bot.theme?.primaryColor || "#8b5cf6") + "20",
-                        }}
-                      >
-                        <Bot
-                          className="w-4 h-4"
-                          style={{
-                            color: bot.theme?.primaryColor || "#8b5cf6",
-                          }}
-                        />
-                      </div>
-                    )}
-                    <div
-                      className={`max-w-[80%] px-4 py-3 rounded-2xl shadow-sm ${
-                        msg.role === "user"
-                          ? "text-white"
-                          : "bg-zinc-800 border border-zinc-700 text-zinc-200"
-                      }`}
-                      style={
-                        msg.role === "user"
-                          ? {
-                              backgroundColor:
-                                bot.theme?.primaryColor || "#8b5cf6",
-                            }
-                          : {}
-                      }
-                    >
-                      <MessageRenderer content={msg.content} role={msg.role} />
-                    </div>
-                    {msg.role === "user" && (
-                      <div className="w-8 h-8 rounded-full bg-zinc-700 flex items-center justify-center flex-shrink-0">
-                        <User className="w-4 h-4 text-zinc-300" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-                {isPreviewLoading && (
-                  <div className="flex gap-3">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center"
-                      style={{
-                        backgroundColor:
-                          (bot.theme?.primaryColor || "#8b5cf6") + "20",
-                      }}
-                    >
-                      <Bot
-                        className="w-4 h-4"
-                        style={{ color: bot.theme?.primaryColor || "#8b5cf6" }}
-                      />
-                    </div>
-                    <div className="px-4 py-3 rounded-2xl bg-zinc-800 border border-zinc-700">
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce" />
-                        <span
-                          className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.1s" }}
-                        />
-                        <span
-                          className="w-2 h-2 bg-zinc-400 rounded-full animate-bounce"
-                          style={{ animationDelay: "0.2s" }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Input Area */}
-              <div className="p-4 border-t bg-zinc-900 border-zinc-800">
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handlePreviewSend();
-                  }}
-                  className="flex gap-2"
-                >
-                  <input
-                    type="text"
-                    value={previewInput}
-                    onChange={(e) => setPreviewInput(e.target.value)}
-                    placeholder="Type a message..."
-                    className="flex-1 px-4 py-3 rounded-full text-sm focus:outline-none focus:ring-2 focus:border-transparent transition-all bg-zinc-800 border border-zinc-700 text-white placeholder-zinc-500 focus:bg-zinc-900"
-                    style={
-                      {
-                        "--tw-ring-color": bot.theme?.primaryColor || "#8b5cf6",
-                      } as any
-                    }
-                  />
-                  <button
-                    type="submit"
-                    disabled={!previewInput.trim() || isPreviewLoading}
-                    className="p-3 text-white rounded-full transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
-                    style={{
-                      backgroundColor: bot.theme?.primaryColor || "#8b5cf6",
-                    }}
-                  >
-                    <Send className="w-5 h-5" />
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
