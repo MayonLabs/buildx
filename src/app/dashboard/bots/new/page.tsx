@@ -6,10 +6,9 @@ import { ArrowLeft, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 
 const AI_MODELS = [
-    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", description: "Latest and fastest" },
-    { id: "gemini-1.5-pro", name: "Gemini 1.5 Pro", description: "Most capable model" },
-    { id: "gemini-1.5-flash", name: "Gemini 1.5 Flash", description: "Fast and efficient" },
-    { id: "gemini-1.5-flash-8b", name: "Gemini 1.5 Flash 8B", description: "Lightweight" },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", description: "Latest · fast and capable" },
+    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", description: "Most capable model" },
+    { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite", description: "Fastest · lowest cost" },
 ];
 
 const THEME_COLORS = [
@@ -32,7 +31,7 @@ export default function NewBotPage() {
         name: "",
         systemPrompt: "You are a helpful assistant. Answer questions clearly and concisely.",
         temperature: 0.7,
-        aiModel: "gemini-2.0-flash",
+        aiModel: "gemini-2.5-flash",
         theme: {
             primaryColor: "#8b5cf6",
             chatTitle: "Chat with us",

@@ -41,7 +41,7 @@
     // Create styles for Launcher and Container
     const styles = document.createElement('style');
     styles.textContent = `
-      .botx-launcher {
+      .buildx-launcher {
         position: fixed;
         ${position.includes('bottom') ? 'bottom: 20px;' : 'top: 20px;'}
         ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
@@ -59,17 +59,17 @@
         z-index: 2147483647; /* Max z-index */
         font-family: ${theme.common?.fontFamily || 'inherit'};
       }
-      .botx-launcher:hover {
+      .buildx-launcher:hover {
         transform: scale(1.05);
         box-shadow: 0 8px 24px rgba(0,0,0,0.2);
       }
-      .botx-launcher svg {
+      .buildx-launcher svg {
         width: 28px;
         height: 28px;
         color: ${launcherIconColor};
         stroke: ${launcherIconColor};
       }
-      .botx-iframe-container {
+      .buildx-iframe-container {
         position: fixed;
         ${position.includes('bottom') ? 'bottom: 90px;' : 'top: 90px;'}
         ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
@@ -84,11 +84,11 @@
         background: transparent;
         font-family: ${theme.common?.fontFamily || 'inherit'};
       }
-      .botx-iframe-container.open {
+      .buildx-iframe-container.open {
         display: block;
         animation: botcms-slideIn 0.3 cubic-bezier(0.16, 1, 0.3, 1);
       }
-      .botx-iframe {
+      .buildx-iframe {
         width: 100%;
         height: 100%;
         border: none;
@@ -105,7 +105,7 @@
         }
       }
       @media (max-width: 480px) {
-        .botx-iframe-container {
+        .buildx-iframe-container {
           width: calc(100vw - 40px);
           height: calc(100vh - 120px);
           ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
@@ -116,7 +116,7 @@
 
     // Create launcher button
     const launcher = document.createElement('button');
-    launcher.className = 'botx-launcher';
+    launcher.className = 'buildx-launcher';
     launcher.setAttribute('aria-label', 'Chat with us');
 
     // Default Icon (Bot)
@@ -138,14 +138,14 @@
 
     // Create iframe container
     const iframeContainer = document.createElement('div');
-    iframeContainer.className = 'botx-iframe-container';
+    iframeContainer.className = 'buildx-iframe-container';
 
     // Determine iframe src (pass minimal rendering hints via query params if needed, 
     // but the page itself should fetch config or we pass config via postMessage)
     // For now, simpler to let the page fetch config too or rely on session? 
     // Public page should fetch public config.
     const iframe = document.createElement('iframe');
-    iframe.className = 'botx-iframe';
+    iframe.className = 'buildx-iframe';
     iframe.src = `${baseUrl}/share/${botId}?embed=true`;
     iframe.title = 'Chat Widget';
 
@@ -167,7 +167,7 @@
 
     // Listen for close messages from iframe
     window.addEventListener('message', function (event) {
-      if (event.data === 'botx-close-widget') {
+      if (event.data === 'buildx-close-widget') {
         isOpen = false;
         iframeContainer.classList.remove('open');
         launcher.innerHTML = theme.launcher?.icon || chatIcon;

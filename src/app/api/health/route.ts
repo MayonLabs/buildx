@@ -1,7 +1,7 @@
-
 import { NextResponse } from "next/server";
 import mongoose from "mongoose";
 import dbConnect from "@/lib/db";
+import { getGlobalSettings } from "@/lib/vector/settings-cache";
 
 export async function GET() {
     try {
@@ -22,6 +22,9 @@ export async function GET() {
 
         const latency = Math.round(performance.now() - start);
 
+        const globalSettings = await getGlobalSettings();
+        const hasGeminiKey = !!globalSettings.geminiApiKey;
+
         return NextResponse.json({
             status: "healthy",
             uptime: process.uptime(),
@@ -32,7 +35,7 @@ export async function GET() {
                     latency: `${latency}ms`,
                 },
                 gemini: {
-                    status: process.env.GEMINI_API_KEY ? "configured" : "missing_key",
+                    status: hasGeminiKey ? "configured" : "missing_key",
                 }
             }
         });

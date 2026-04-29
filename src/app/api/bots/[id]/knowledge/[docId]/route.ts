@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { KnowledgeBase, KnowledgeChunk } from "@/models";
+import { KnowledgeBase } from "@/models";
 import dbConnect from "@/lib/db";
+import { getVectorProvider } from "@/lib/vector";
+import { getGlobalVectorConfig } from "@/lib/vector/settings-cache";
 
 export async function DELETE(
     req: NextRequest,
@@ -11,21 +13,20 @@ export async function DELETE(
         const session = await auth();
         if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-        const { docId } = await params;
-
+        const { id, docId } = await params;
         if (!docId) return NextResponse.json({ error: "Missing document ID" }, { status: 400 });
 
         await dbConnect();
 
-        // Delete parent doc
-        const deletedDoc = await KnowledgeBase.findByIdAndDelete(docId);
+        const kbDoc = await KnowledgeBase.findById(docId).lean();
+        if (!kbDoc) return NextResponse.json({ error: "Document not found" }, { status: 404 });
 
-        if (!deletedDoc) {
-            return NextResponse.json({ error: "Document not found" }, { status: 404 });
-        }
+        const vectorConfig = await getGlobalVectorConfig();
+        const provider = getVectorProvider(vectorConfig);
 
-        // Delete all chunks
-        await KnowledgeChunk.deleteMany({ sourceId: docId });
+        // Delete vectors from provider, then remove metadata doc
+        await provider.delete(id, docId);
+        await KnowledgeBase.findByIdAndDelete(docId);
 
         return NextResponse.json({ success: true });
     } catch (error) {

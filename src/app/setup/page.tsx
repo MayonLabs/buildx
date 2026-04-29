@@ -98,7 +98,7 @@ export default function SetupPage() {
                                                 <EnvRow name="ADMIN_PASSWORD" desc="Your login password" />
                                                 <EnvRow name="AUTH_SECRET" desc="Session encryption key (openssl rand -base64 32)" />
                                                 <EnvRow name="MONGODB_URI" desc="MongoDB connection string" />
-                                                <EnvRow name="GEMINI_API_KEY" desc="Google AI Studio API Key" />
+
                                             </tbody>
                                         </table>
                                     </div>

@@ -55,10 +55,6 @@ export default function DocsPage() {
                                             <td className="px-4 py-3">Login email for the dashboard.</td>
                                         </tr>
                                         <tr>
-                                            <td className="px-4 py-3 font-mono text-violet-400">GEMINI_API_KEY</td>
-                                            <td className="px-4 py-3">Google AI Studio API Key.</td>
-                                        </tr>
-                                        <tr>
                                             <td className="px-4 py-3 font-mono text-violet-400">MONGODB_URI</td>
                                             <td className="px-4 py-3">MongoDB Atlas connection string.</td>
                                         </tr>

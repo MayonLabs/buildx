@@ -27,14 +27,14 @@ export function PublicChat({ botId, botName, theme }: PublicChatProps) {
   // Helper to notify parent of clicks (for Design Tab "Click to Edit")
   const notifyClick = (section: string) => {
     if (typeof window !== 'undefined' && window.parent && window.parent !== window) {
-      window.parent.postMessage({ type: 'BOTX_ELEMENT_CLICK', section }, '*');
+      window.parent.postMessage({ type: 'BUILDX_ELEMENT_CLICK', section }, '*');
     }
   };
 
   // Listen for live preview updates (from postMessage)
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
-      if (typeof event.data === 'object' && event.data.type === 'BOTX_THEME_UPDATE') {
+      if (typeof event.data === 'object' && event.data.type === 'BUILDX_THEME_UPDATE') {
         setPreviewTheme(event.data.theme);
       }
     };
@@ -162,7 +162,7 @@ export function PublicChat({ botId, botName, theme }: PublicChatProps) {
             }}>
               {chatTitle}
             </h1>
-            <p className="text-xs opacity-70">Powered by Botx</p>
+            <p className="text-xs opacity-70">Powered by Buildx</p>
           </div>
         </div>
         <button

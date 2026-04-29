@@ -54,7 +54,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
     useEffect(() => {
         if (iframeRef.current?.contentWindow) {
             iframeRef.current.contentWindow.postMessage({
-                type: 'BOTX_THEME_UPDATE',
+                type: 'BUILDX_THEME_UPDATE',
                 theme: bot.theme
             }, '*');
         }
@@ -63,7 +63,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
     // Listen for click events from iframe
     useEffect(() => {
         const handleMessage = (event: MessageEvent) => {
-            if (typeof event.data === 'object' && event.data.type === 'BOTX_ELEMENT_CLICK') {
+            if (typeof event.data === 'object' && event.data.type === 'BUILDX_ELEMENT_CLICK') {
                 setSelectedSection(event.data.section as DesignSection);
                 setIsOpen(true); // Ensure widget is open if internal element clicked
             }
@@ -107,7 +107,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                 // Initial Sync on Load
                                 const iframe = e.currentTarget;
                                 iframe.contentWindow?.postMessage({
-                                    type: 'BOTX_THEME_UPDATE',
+                                    type: 'BUILDX_THEME_UPDATE',
                                     theme: bot.theme
                                 }, '*');
                             }}

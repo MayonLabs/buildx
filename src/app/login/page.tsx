@@ -45,9 +45,9 @@ export default function LoginPage() {
                     {/* Logo/Brand */}
                     <div className="text-center mb-8">
                         <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center">
-                            <img src="/Botx_logo.svg" alt="Botx" className="w-16 h-16" />
+                            <img src="/Buildx_logo.svg" alt="Buildx" className="w-16 h-16" />
                         </div>
-                        <h1 className="text-2xl font-bold text-white mb-2">Botx</h1>
+                        <h1 className="text-2xl font-bold text-white mb-2">Buildx</h1>
                         <p className="text-zinc-400 text-sm">
                             Sign in to access your dashboard
                         </p>
@@ -137,7 +137,7 @@ export default function LoginPage() {
 
                     {/* Footer */}
                     <p className="mt-8 text-center text-zinc-500 text-xs">
-                        Self-hosted AI Botx
+                        Self-hosted AI Buildx
                     </p>
                 </div>
             </div>

@@ -60,8 +60,8 @@ export function Sidebar() {
             >
                 <div className="flex flex-col h-full">
                     <div className="flex items-center gap-3 px-6 py-5 border-b border-zinc-800">
-                        <img src="/Botx_logo.svg" alt="Botx" className="w-10 h-10" />
-                        <span className="text-xl font-bold text-white">Botx</span>
+                        <img src="/Buildx_logo.svg" alt="Buildx" className="w-10 h-10" />
+                        <span className="text-xl font-bold text-white">Buildx</span>
                     </div>
 
                     {/* Navigation */}
