@@ -6,13 +6,13 @@ export interface IProviderConfig {
     indexName?: string;
 }
 
-export interface IAppSettings extends Document {
+export interface IAppSettings extends Omit<Document, '_id'> {
     _id: string;
     geminiApiKey?: string;          // stored encrypted
     activeVectorProvider?: string;  // "mongodb" | "qdrant"
     vectorDbConfigs?: Record<string, IProviderConfig>;
     // Legacy field kept for migration reads
-    vectorDb?: any;
+    vectorDb?: unknown;
     updatedAt: Date;
 }
 

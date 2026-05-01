@@ -26,7 +26,8 @@ export class QdrantVectorProvider implements IVectorProvider {
       let created = false;
       try {
         const info = await this.client.getCollection(name);
-        const existingSize = (info.config?.params?.vectors as any)?.size;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const existingSize = (info.config?.params?.vectors as any)?.size;
         if (existingSize && existingSize !== vectorSize) {
           await this.client.deleteCollection(name);
           throw new Error("recreate");
@@ -66,11 +67,12 @@ export class QdrantVectorProvider implements IVectorProvider {
     const name = this.config.indexName!;
     try {
       const info = await this.client.getCollection(name);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const params = info.config?.params?.vectors as any;
       const payload = info.payload_schema || {};
       return {
         exists: true,
-        vectorCount: info.vectors_count ?? 0,
+        vectorCount: info.indexed_vectors_count ?? 0,
         dimensions: params?.size ?? 0,
         indexedFields: Object.keys(payload),
       };
@@ -115,7 +117,7 @@ export class QdrantVectorProvider implements IVectorProvider {
         content: (r.payload?.content as string) || "",
         score: r.score,
       }));
-    } catch (e: any) {
+    } catch (e) {
       if (this.isIndexMissingError(e)) {
         await this.ensurePayloadIndexes();
         const results = await doSearch();
@@ -124,7 +126,8 @@ export class QdrantVectorProvider implements IVectorProvider {
           score: r.score,
         }));
       }
-      const detail = e?.data?.status?.error || e?.message || String(e);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detail = (e as any)?.data?.status?.error || (e as any)?.message || String(e);
       throw new Error(`Qdrant search failed (vec_size=${queryEmbedding.length}): ${detail}`);
     }
   }
@@ -137,9 +140,11 @@ export class QdrantVectorProvider implements IVectorProvider {
     ]);
   }
 
-  private isIndexMissingError(e: any): boolean {
+  private isIndexMissingError(e: unknown): boolean {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const err = e as any;
     const msg: string =
-      e?.data?.status?.error || e?.data?.result?.status?.error || e?.message || "";
+      err?.data?.status?.error || err?.data?.result?.status?.error || err?.message || "";
     return msg.toLowerCase().includes("index required") || msg.toLowerCase().includes("index required but not found");
   }
 
@@ -149,7 +154,7 @@ export class QdrantVectorProvider implements IVectorProvider {
         filter: { must: [{ key: "sourceId", match: { value: sourceId } }] },
         wait: true,
       });
-    } catch (e: any) {
+    } catch (e) {
       if (this.isIndexMissingError(e)) {
         // Auto-fix: create the missing payload index then retry once
         await this.ensurePayloadIndexes();
@@ -159,8 +164,30 @@ export class QdrantVectorProvider implements IVectorProvider {
         });
         return;
       }
-      const detail = e?.data?.status?.error || e?.message || String(e);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detail = (e as any)?.data?.status?.error || (e as any)?.message || String(e);
       throw new Error(`Qdrant delete failed: ${detail}`);
+    }
+  }
+
+  async deleteByBot(botId: string): Promise<void> {
+    const doDelete = () =>
+      this.client.delete(this.config.indexName!, {
+        filter: { must: [{ key: "botId", match: { value: botId } }] },
+        wait: true,
+      });
+
+    try {
+      await doDelete();
+    } catch (e) {
+      if (this.isIndexMissingError(e)) {
+        await this.ensurePayloadIndexes();
+        await doDelete();
+        return;
+      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const detail = (e as any)?.data?.status?.error || (e as any)?.message || String(e);
+      throw new Error(`Qdrant deleteByBot failed: ${detail}`);
     }
   }
 

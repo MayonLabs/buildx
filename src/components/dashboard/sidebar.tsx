@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { signOut, useSession } from "next-auth/react";
 import { cn } from "@/lib/utils";
@@ -13,12 +14,14 @@ import {
     Menu,
     X,
     BookOpen,
+    Users,
 } from "lucide-react";
 import { useState } from "react";
 
 const navigation = [
     { name: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { name: "My Bots", href: "/dashboard/bots", icon: Bot },
+    { name: "Leads", href: "/dashboard/leads", icon: Users },
     { name: "API Keys", href: "/dashboard/api-keys", icon: Key },
     { name: "Documentation", href: "/dashboard/docs", icon: BookOpen },
     { name: "Settings", href: "/dashboard/settings", icon: Settings },
@@ -60,7 +63,7 @@ export function Sidebar() {
             >
                 <div className="flex flex-col h-full">
                     <div className="flex items-center gap-3 px-6 py-5 border-b border-zinc-800">
-                        <img src="/Buildx_logo.svg" alt="Buildx" className="w-10 h-10" />
+                        <Image src="/Buildx_logo.svg" alt="Buildx" width={40} height={40} />
                         <span className="text-xl font-bold text-white">Buildx</span>
                     </div>
 

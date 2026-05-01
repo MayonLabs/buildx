@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useEffect, useState, useMemo } from "react";
+import { useParams, useRouter, useSearchParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -9,24 +9,18 @@ import {
   Loader2,
   Bot,
   Brain,
-  Code,
   Terminal,
   Check,
   Copy,
   Globe,
   Layout,
-  Power,
   Upload,
   FileText,
   Trash2,
-  Moon,
-  Sun,
-  User,
-  Plus,
+  Sparkles,
 } from "lucide-react";
-import ReactMarkdown from "react-markdown";
-import { DesignTab } from "@/components/dashboard/bot-editor/design-tab";
 import { SecurityTab } from "@/components/dashboard/bot-editor/security-tab";
+import { ToolsTab } from "@/components/dashboard/bot-editor/tools-tab";
 
 interface BotData {
   _id: string;
@@ -104,6 +98,16 @@ interface BotData {
     primaryColor?: string;
     chatTitle?: string;
   };
+  tools?: {
+    leadCapture?: {
+      enabled?: boolean;
+      requireFields?: ("name" | "email" | "phone")[];
+      qualificationPrompt?: string;
+      dedupWindowHours?: number;
+      notifyEmail?: string;
+      webhookUrl?: string;
+    };
+  };
 }
 
 interface KnowledgeDoc {
@@ -123,35 +127,88 @@ const AI_MODELS = [
   { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash Lite" },
 ];
 
-const THEME_COLORS = [
-  "#8b5cf6", // Violet
-  "#6366f1", // Indigo
-  "#3b82f6", // Blue
-  "#06b6d4", // Cyan
-  "#10b981", // Emerald
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#ec4899", // Pink
+type SectionId = "prompt" | "model" | "knowledge" | "tools" | "security";
+
+interface SectionItem {
+  id: SectionId;
+  label: string;
+  icon: typeof Bot;
+  description: string;
+}
+
+interface LinkOutItem {
+  id: string;
+  label: string;
+  icon: typeof Bot;
+  description: string;
+  href: (botId: string) => string;
+}
+
+interface SectionGroup {
+  group: string;
+  items: SectionItem[];
+  linkouts?: LinkOutItem[];
+}
+
+const SECTIONS: SectionGroup[] = [
+  {
+    group: "Behavior",
+    items: [
+      { id: "prompt", label: "Prompt", icon: Terminal, description: "Identity & instructions" },
+      { id: "model", label: "Model", icon: Bot, description: "Engine & creativity" },
+      { id: "knowledge", label: "Knowledge", icon: Brain, description: "Documents & RAG" },
+      { id: "tools", label: "Tools", icon: Sparkles, description: "Lead capture & tools" },
+    ],
+  },
+  {
+    group: "Embed & Distribution",
+    items: [
+      { id: "security", label: "Security", icon: Globe, description: "Allowed domains" },
+    ],
+    linkouts: [
+      {
+        id: "design",
+        label: "Design Studio",
+        icon: Layout,
+        description: "Theme & live preview",
+        href: (botId) => `/dashboard/bots/${botId}/design`,
+      },
+    ],
+  },
 ];
 
-const WIDGET_POSITIONS = [
-  { id: "bottom-right", label: "Bottom Right" },
-  { id: "bottom-left", label: "Bottom Left" },
-  { id: "top-right", label: "Top Right" },
-  { id: "top-left", label: "Top Left" },
-];
+const ALL_SECTION_IDS: SectionId[] = SECTIONS.flatMap(g => g.items.map(i => i.id));
+
+function isValidSection(s: string | null): s is SectionId {
+  return !!s && (ALL_SECTION_IDS as string[]).includes(s);
+}
 
 export default function BotEditorPage() {
   const params = useParams();
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [bot, setBot] = useState<BotData | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<
-    "prompt" | "model" | "knowledge" | "design" | "security"
-  >("prompt");
+  const initialSection = searchParams.get("section");
+  const [activeTab, setActiveTab] = useState<SectionId>(
+    isValidSection(initialSection) ? initialSection : "prompt"
+  );
   const [copied, setCopied] = useState(false);
   const [newDomain, setNewDomain] = useState("");
+
+  const activeMeta = useMemo(
+    () => SECTIONS.flatMap(g => g.items).find(i => i.id === activeTab),
+    [activeTab]
+  );
+
+  function setSection(id: SectionId) {
+    setActiveTab(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("section", id);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
 
   // Knowledge State
   const [knowledge, setKnowledge] = useState<KnowledgeDoc[]>([]);
@@ -345,22 +402,6 @@ export default function BotEditorPage() {
     }
   }
 
-  // Embed Code Copy
-  const handleCopyCode = () => {
-    if (!bot) return;
-    const code = `<script src="${window.location.origin
-      }/embed.js" data-bot-id="${bot.publicId}"${bot.theme.primaryColor !== "#8b5cf6"
-        ? ` data-color="${bot.theme.primaryColor}"`
-        : ""
-      }${bot.widgetPosition !== "bottom-right"
-        ? ` data-position="${bot.widgetPosition}"`
-        : ""
-      }></script>`;
-    navigator.clipboard.writeText(code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   // Domain Management
   const addDomain = () => {
     if (!bot || !newDomain.trim()) return;
@@ -387,7 +428,7 @@ export default function BotEditorPage() {
   if (!bot) return null;
 
   return (
-    <div className="p-6 lg:p-8 max-w-5xl mx-auto">
+    <div className="p-6 lg:p-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
@@ -428,33 +469,105 @@ export default function BotEditorPage() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-zinc-900 rounded-xl mb-6 overflow-x-auto">
-        {[
-          { id: "prompt", label: "Prompt", icon: Terminal },
-          { id: "model", label: "Model", icon: Bot },
-          { id: "knowledge", label: "Knowledge", icon: Brain },
-          { id: "design", label: "Design", icon: Layout },
-          { id: "security", label: "Security", icon: Globe },
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap flex-1 justify-center ${activeTab === tab.id
-              ? "bg-zinc-800 text-white shadow-sm"
-              : "text-zinc-400 hover:text-white hover:bg-zinc-800/50"
-              }`}
-          >
-            <tab.icon className="w-4 h-4" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      {/* Two-column layout: section nav + content */}
+      <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-6 lg:gap-8">
+        {/* Section nav */}
+        <aside className="md:sticky md:top-6 md:self-start">
+          {/* Mobile: horizontal scroll pills */}
+          <div className="md:hidden -mx-6 px-6 mb-2 overflow-x-auto">
+            <div className="flex gap-1.5 min-w-max pb-2">
+              {SECTIONS.flatMap(g => g.items).map((s) => {
+                const isActive = activeTab === s.id;
+                return (
+                  <button
+                    key={s.id}
+                    onClick={() => setSection(s.id)}
+                    className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${isActive
+                      ? "bg-violet-500/10 text-violet-300 border border-violet-500/30"
+                      : "bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700"
+                      }`}
+                  >
+                    <s.icon className="w-4 h-4" />
+                    {s.label}
+                  </button>
+                );
+              })}
+              {SECTIONS.flatMap(g => g.linkouts || []).map((l) => (
+                <Link
+                  key={l.id}
+                  href={l.href(bot._id)}
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-lg text-sm font-medium whitespace-nowrap bg-zinc-900 border border-zinc-800 text-zinc-400 hover:text-violet-300 hover:border-violet-500/40 transition-colors"
+                >
+                  <l.icon className="w-4 h-4" />
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
 
-      {/* Content Area */}
-      <div className="grid grid-cols-1 gap-8">
-        {/* Main Form */}
-        <div className="space-y-6">
+          {/* Desktop: vertical grouped sidebar */}
+          <nav className="hidden md:block space-y-5">
+            {SECTIONS.map((group) => (
+              <div key={group.group}>
+                <p className="px-2 text-[11px] font-semibold uppercase tracking-wider text-zinc-500 mb-2">
+                  {group.group}
+                </p>
+                <div className="space-y-0.5">
+                  {group.items.map((s) => {
+                    const isActive = activeTab === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => setSection(s.id)}
+                        className={`group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left ${isActive
+                          ? "bg-violet-500/10 text-violet-200 border border-violet-500/30"
+                          : "border border-transparent text-zinc-400 hover:text-white hover:bg-zinc-900"
+                          }`}
+                      >
+                        <s.icon
+                          className={`w-4 h-4 flex-shrink-0 ${isActive ? "text-violet-300" : "text-zinc-500 group-hover:text-zinc-300"
+                            }`}
+                        />
+                        <span className="font-medium">{s.label}</span>
+                      </button>
+                    );
+                  })}
+                  {(group.linkouts || []).map((l) => (
+                    <Link
+                      key={l.id}
+                      href={l.href(bot._id)}
+                      className="group w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm border border-transparent text-zinc-400 hover:text-violet-200 hover:bg-violet-500/5 hover:border-violet-500/20 transition-colors"
+                    >
+                      <div className="flex items-center gap-3 min-w-0">
+                        <l.icon className="w-4 h-4 flex-shrink-0 text-zinc-500 group-hover:text-violet-300" />
+                        <span className="font-medium truncate">{l.label}</span>
+                      </div>
+                      <span className="text-zinc-600 group-hover:text-violet-400 text-sm" aria-hidden>
+                        →
+                      </span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </nav>
+        </aside>
+
+        {/* Main content */}
+        <div className="min-w-0 space-y-6">
+          {/* Section header */}
+          {activeMeta && (
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center">
+                <activeMeta.icon className="w-5 h-5 text-violet-300" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold text-white">{activeMeta.label}</h2>
+                <p className="text-xs text-zinc-500">{activeMeta.description}</p>
+              </div>
+            </div>
+          )}
+
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -701,16 +814,6 @@ export default function BotEditorPage() {
               </div>
             )}
 
-            {/* NEW TABS */}
-            {activeTab === "design" && (
-              <DesignTab
-                bot={bot}
-                setBot={setBot}
-                handleCopyCode={handleCopyCode}
-                copied={copied}
-              />
-            )}
-
             {activeTab === "security" && (
               <SecurityTab
                 bot={bot}
@@ -719,6 +822,10 @@ export default function BotEditorPage() {
                 addDomain={addDomain}
                 removeDomain={removeDomain}
               />
+            )}
+
+            {activeTab === "tools" && (
+              <ToolsTab bot={bot} setBot={setBot} />
             )}
           </form>
         </div>

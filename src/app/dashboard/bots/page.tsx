@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Bot, MoreVertical, Pencil, Trash2, Code, ExternalLink, Copy } from "lucide-react";
+import { Plus, Bot, MoreVertical, Pencil, Trash2, Code, ExternalLink, Copy, Users } from "lucide-react";
 
 interface BotData {
     _id: string;
@@ -12,9 +12,13 @@ interface BotData {
     publicId: string;
     isActive: boolean;
     createdAt: string;
+    leadCount?: number;
     theme: {
         launcher: { bgColor: string };
         primaryColor?: string; // Legacy
+    };
+    tools?: {
+        leadCapture?: { enabled?: boolean };
     };
 }
 
@@ -198,14 +202,26 @@ export default function BotsPage() {
 
                             {/* Bot Footer */}
                             <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-                                <span
-                                    className={`text-xs px-2 py-1 rounded-full ${bot.isActive
-                                        ? "bg-emerald-500/10 text-emerald-400"
-                                        : "bg-zinc-800 text-zinc-500"
-                                        }`}
-                                >
-                                    {bot.isActive ? "Active" : "Inactive"}
-                                </span>
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span
+                                        className={`text-xs px-2 py-1 rounded-full ${bot.isActive
+                                            ? "bg-emerald-500/10 text-emerald-400"
+                                            : "bg-zinc-800 text-zinc-500"
+                                            }`}
+                                    >
+                                        {bot.isActive ? "Active" : "Inactive"}
+                                    </span>
+                                    {bot.tools?.leadCapture?.enabled && (
+                                        <Link
+                                            href={`/dashboard/leads?botId=${bot._id}`}
+                                            className="inline-flex items-center gap-1 text-xs px-2 py-1 rounded-full bg-violet-500/10 text-violet-300 border border-violet-500/20 hover:bg-violet-500/20"
+                                            title="View leads"
+                                        >
+                                            <Users className="w-3 h-3" />
+                                            {bot.leadCount ?? 0}
+                                        </Link>
+                                    )}
+                                </div>
                                 <Link
                                     href={`/dashboard/bots/${bot._id}`}
                                     className="text-sm text-violet-400 hover:text-violet-300 font-medium"

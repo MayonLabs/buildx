@@ -31,7 +31,8 @@ export class PineconeVectorProvider implements IVectorProvider {
     }));
 
     for (let i = 0; i < vectors.length; i += 100) {
-      await ns.upsert(vectors.slice(i, i + 100));
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await ns.upsert({ records: vectors.slice(i, i + 100) } as any);
     }
   }
 
@@ -56,6 +57,11 @@ export class PineconeVectorProvider implements IVectorProvider {
     if (ids.length > 0) {
       await ns.deleteMany(ids);
     }
+  }
+
+  async deleteByBot(botId: string): Promise<void> {
+    // Each bot lives in its own namespace, so wiping the namespace is enough.
+    await this.ns(botId).deleteAll();
   }
 
   async testConnection(): Promise<{ success: boolean; message: string }> {

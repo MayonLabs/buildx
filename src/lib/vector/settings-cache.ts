@@ -25,8 +25,11 @@ export async function getGlobalSettings(): Promise<AppConfig> {
     const settings = await AppSettings.findById("global").lean();
 
     // Resolve Qdrant config — prefer new vectorDbConfigs, fall back to legacy vectorDb
-    let providerCfg: Record<string, any> =
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const providerCfg: Record<string, any> =
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (settings?.vectorDbConfigs as any)?.qdrant ||
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ((settings?.vectorDb as any)?.provider === "qdrant" ? settings?.vectorDb : {}) ||
         {};
 

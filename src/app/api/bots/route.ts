@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/db";
-import { Bot } from "@/models";
+import { Bot, Lead } from "@/models";
 import { auth } from "@/auth";
 import { ensureVectorIndex } from "@/lib/atlas";
 
@@ -15,7 +15,18 @@ export async function GET() {
         await dbConnect();
         const bots = await Bot.find().sort({ createdAt: -1 }).lean();
 
-        return NextResponse.json({ bots });
+        // Per-bot lead counts (single aggregation)
+        const counts = await Lead.aggregate<{ _id: unknown; count: number }>([
+            { $group: { _id: "$botId", count: { $sum: 1 } } },
+        ]);
+        const countByBot = new Map(counts.map(c => [String(c._id), c.count]));
+
+        const botsWithCounts = bots.map(b => ({
+            ...b,
+            leadCount: countByBot.get(String(b._id)) || 0,
+        }));
+
+        return NextResponse.json({ bots: botsWithCounts });
     } catch (error) {
         console.error("Error fetching bots:", error);
         return NextResponse.json(

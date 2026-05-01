@@ -3,6 +3,7 @@
 import { Globe, Trash2, Layout } from "lucide-react";
 
 interface SecurityTabProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bot: any;
     newDomain: string;
     setNewDomain: (domain: string) => void;

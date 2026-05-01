@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Activity, Database, Server, Smartphone, Cpu } from "lucide-react";
+import { Activity, Database, Server, Cpu } from "lucide-react";
 import clsx from "clsx";
 
 interface HealthData {
@@ -30,7 +30,7 @@ export function SystemHealth() {
                 if (!res.ok) throw new Error("Failed");
                 const json = await res.json();
                 setData(json);
-            } catch (err) {
+            } catch {
                 setError(true);
             } finally {
                 setLoading(false);

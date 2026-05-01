@@ -6,7 +6,7 @@ export class MongoDBVectorProvider implements IVectorProvider {
   async upsert(chunks: VectorChunk[]): Promise<void> {
     if (!chunks.length) return;
     const conn = await dbConnect();
-    // @ts-ignore
+    // @ts-expect-error — conn.connection.db is untyped in mongoose typedefs
     const collection = conn.connection.db.collection("knowledgechunks");
 
     const docs = chunks.map(chunk => ({
@@ -23,7 +23,7 @@ export class MongoDBVectorProvider implements IVectorProvider {
 
   async query(botId: string, queryEmbedding: number[], topK: number): Promise<RetrievedChunk[]> {
     const conn = await dbConnect();
-    // @ts-ignore
+    // @ts-expect-error — conn.connection.db is untyped in mongoose typedefs
     const collection = conn.connection.db.collection("knowledgechunks");
 
     const results = await collection.aggregate([
@@ -47,9 +47,16 @@ export class MongoDBVectorProvider implements IVectorProvider {
 
   async delete(botId: string, sourceId: string): Promise<void> {
     const conn = await dbConnect();
-    // @ts-ignore
+    // @ts-expect-error — conn.connection.db is untyped in mongoose typedefs
     const collection = conn.connection.db.collection("knowledgechunks");
     await collection.deleteMany({ sourceId: new mongoose.Types.ObjectId(sourceId) });
+  }
+
+  async deleteByBot(botId: string): Promise<void> {
+    const conn = await dbConnect();
+    // @ts-expect-error — conn.connection.db is untyped in mongoose typedefs
+    const collection = conn.connection.db.collection("knowledgechunks");
+    await collection.deleteMany({ botId: new mongoose.Types.ObjectId(botId) });
   }
 
   async testConnection(): Promise<{ success: boolean; message: string }> {

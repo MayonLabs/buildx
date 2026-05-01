@@ -34,48 +34,61 @@
     const theme = botConfig.theme || {};
     const position = botConfig.widgetPosition || 'bottom-right';
 
-    // Default Theme Fallbacks
+    // Theme tokens — read from theme with sensible defaults so existing bots keep working.
     const launcherColor = theme.launcher?.bgColor || theme.primaryColor || '#8b5cf6';
     const launcherIconColor = theme.launcher?.iconColor || '#ffffff';
+    const launcherSize = theme.launcher?.size || '60px';
+    const launcherIconSize = theme.launcher?.iconSize || '28px';
+    const launcherOffsetX = theme.launcher?.offsetX || '20px';
+    const launcherOffsetY = theme.launcher?.offsetY || '20px';
+    const launcherShadow = theme.launcher?.shadow || '0 4px 12px rgba(0,0,0,0.15)';
+    const launcherShadowHover = theme.launcher?.shadowHover || '0 8px 24px rgba(0,0,0,0.2)';
+    const launcherCloseBg = theme.launcher?.closeBgColor || launcherColor;
+    const launcherCloseIconColor = theme.launcher?.closeIconColor || launcherIconColor;
+    const launcherBorderColor = theme.launcher?.borderColor || 'transparent';
+    const launcherBorderWidth = theme.launcher?.borderWidth || '0';
+    // Widget size — drives the iframe container.
+    const widgetWidth = theme.chatWindow?.width || '380px';
+    const widgetHeight = theme.chatWindow?.height || '600px';
+    const iframeOffsetY = `calc(${launcherSize} + ${launcherOffsetY} + 10px)`;
 
-    // Create styles for Launcher and Container
     const styles = document.createElement('style');
     styles.textContent = `
       .buildx-launcher {
         position: fixed;
-        ${position.includes('bottom') ? 'bottom: 20px;' : 'top: 20px;'}
-        ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
-        width: 60px;
-        height: 60px;
+        ${position.includes('bottom') ? `bottom: ${launcherOffsetY};` : `top: ${launcherOffsetY};`}
+        ${position.includes('right') ? `right: ${launcherOffsetX};` : `left: ${launcherOffsetX};`}
+        width: ${launcherSize};
+        height: ${launcherSize};
         border-radius: ${theme.launcher?.borderRadius || '50%'};
         background: ${launcherColor};
-        border: none;
+        border: ${launcherBorderWidth} solid ${launcherBorderColor};
         cursor: pointer;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        box-shadow: ${launcherShadow};
         display: flex;
         align-items: center;
         justify-content: center;
         transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s;
-        z-index: 2147483647; /* Max z-index */
+        z-index: 2147483647;
         font-family: ${theme.common?.fontFamily || 'inherit'};
       }
       .buildx-launcher:hover {
         transform: scale(1.05);
-        box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+        box-shadow: ${launcherShadowHover};
       }
       .buildx-launcher svg {
-        width: 28px;
-        height: 28px;
+        width: ${launcherIconSize};
+        height: ${launcherIconSize};
         color: ${launcherIconColor};
         stroke: ${launcherIconColor};
       }
       .buildx-iframe-container {
         position: fixed;
-        ${position.includes('bottom') ? 'bottom: 90px;' : 'top: 90px;'}
-        ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
-        width: 380px;
-        height: 600px;
-        max-height: calc(100vh - 120px);
+        ${position.includes('bottom') ? `bottom: ${iframeOffsetY};` : `top: ${iframeOffsetY};`}
+        ${position.includes('right') ? `right: ${launcherOffsetX};` : `left: ${launcherOffsetX};`}
+        width: ${widgetWidth};
+        height: ${widgetHeight};
+        max-height: calc(100vh - ${iframeOffsetY} - 20px);
         border-radius: ${theme.common?.borderRadius || '16px'};
         overflow: hidden;
         box-shadow: ${theme.common?.shadow || '0 12px 40px rgba(0,0,0,0.12)'};
@@ -84,9 +97,16 @@
         background: transparent;
         font-family: ${theme.common?.fontFamily || 'inherit'};
       }
+      .buildx-launcher.is-open {
+        background: ${launcherCloseBg};
+      }
+      .buildx-launcher.is-open svg {
+        color: ${launcherCloseIconColor};
+        stroke: ${launcherCloseIconColor};
+      }
       .buildx-iframe-container.open {
         display: block;
-        animation: botcms-slideIn 0.3 cubic-bezier(0.16, 1, 0.3, 1);
+        animation: botcms-slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       }
       .buildx-iframe {
         width: 100%;
@@ -95,20 +115,14 @@
         background: transparent;
       }
       @keyframes botcms-slideIn {
-        from {
-          opacity: 0;
-          transform: translateY(20px);
-        }
-        to {
-          opacity: 1;
-          transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
       }
       @media (max-width: 480px) {
         .buildx-iframe-container {
           width: calc(100vw - 40px);
-          height: calc(100vh - 120px);
-          ${position.includes('right') ? 'right: 20px;' : 'left: 20px;'}
+          height: calc(100vh - ${iframeOffsetY} - 20px);
+          ${position.includes('right') ? `right: ${launcherOffsetX};` : `left: ${launcherOffsetX};`}
         }
       }
     `;
@@ -157,6 +171,7 @@
     launcher.addEventListener('click', function () {
       isOpen = !isOpen;
       iframeContainer.classList.toggle('open', isOpen);
+      launcher.classList.toggle('is-open', isOpen);
 
       if (isOpen) {
         launcher.innerHTML = theme.launcher?.closeIcon || closeIcon;
@@ -170,6 +185,7 @@
       if (event.data === 'buildx-close-widget') {
         isOpen = false;
         iframeContainer.classList.remove('open');
+        launcher.classList.remove('is-open');
         launcher.innerHTML = theme.launcher?.icon || chatIcon;
       }
     });

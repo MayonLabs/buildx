@@ -1,22 +1,24 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { IBotData, IBotTheme } from "@/models/bot.model";
+import { IBotTheme } from "@/models/bot.model";
 import {
     Palette, MessageSquare, LayoutTemplate,
     Type, MousePointerClick, Settings,
-    Copy, Check, Bot, User, MoveHorizontal,
-    ChevronLeft, ChevronRight, Send, X
+    Copy, Check, Bot, User,
+    ChevronLeft, ChevronRight, X, Code,
 } from "lucide-react";
 
 interface DesignTabProps {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bot: { theme: IBotTheme; publicId: string;[key: string]: any };
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setBot: (bot: any) => void;
     handleCopyCode: () => void;
     copied: boolean;
 }
 
-type DesignSection = "header" | "userMessage" | "botMessage" | "launcher" | "common" | "inputArea" | "chatWindow" | null;
+type DesignSection = "header" | "userMessage" | "botMessage" | "launcher" | "common" | "inputArea" | "chatWindow" | "advanced" | null;
 
 export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProps) {
     const [selectedSection, setSelectedSection] = useState<DesignSection>(null);
@@ -29,6 +31,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
         userSelectedCorner: 'TL' | 'TR' | 'BR' | 'BL' | null;
     }>({ botIndependent: false, botSelectedCorner: null, userIndependent: false, userSelectedCorner: null });
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateTheme = (section: keyof IBotTheme, key: string, value: any) => {
         if (section === 'common') {
             setBot({ ...bot, theme: { ...bot.theme, common: { ...bot.theme.common, [key]: value } } });
@@ -45,6 +48,26 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                 [section]: updatedSection
             } as IBotTheme
         });
+    };
+
+    // Toggle a visibility flag under theme.elements.{key}.show
+    type ToggleableElement = "refreshButton" | "branding" | "welcomeSubtitle" | "emptyStateIcon";
+    const setElementShow = (elementKey: ToggleableElement, show: boolean) => {
+        const elements = (bot.theme as IBotTheme).elements || {};
+        setBot({
+            ...bot,
+            theme: {
+                ...bot.theme,
+                elements: {
+                    ...elements,
+                    [elementKey]: { ...(elements[elementKey] || {}), show },
+                },
+            } as IBotTheme,
+        });
+    };
+    const isElementShown = (elementKey: ToggleableElement): boolean => {
+        const elements = (bot.theme as IBotTheme).elements;
+        return elements?.[elementKey]?.show !== false;
     };
 
     // Sync theme to iframe when it changes
@@ -73,7 +96,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
     }, []);
 
     return (
-        <div className="flex flex-col lg:flex-row gap-6 h-[calc(100vh-200px)] min-h-[600px]">
+        <div className="flex flex-col lg:flex-row gap-6 h-full min-h-[600px]">
             {/* Canvas Area (Center) */}
             <div className="flex-1 bg-zinc-950/50 rounded-2xl border border-zinc-800 relative overflow-hidden flex flex-col items-center justify-center p-8 group">
                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px] pointer-events-none" />
@@ -84,17 +107,19 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                 </div>
 
                 {/* Simulated Widget Container (Iframe Host) */}
-                <div className="relative w-full max-w-[380px] h-[700px] flex flex-col items-end justify-end pointer-events-auto">
+                <div className="relative w-full max-w-[420px] h-[760px] flex flex-col items-end justify-end pointer-events-auto">
 
-                    {/* Iframe Container */}
+                    {/* Iframe Container — honours chatWindow.width/height + common.borderRadius */}
                     <div
                         className={`
-                            w-[380px] h-[600px] bg-transparent overflow-hidden origin-bottom-right transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
+                            bg-transparent overflow-hidden origin-bottom-right transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]
                             ${isOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-90 translate-y-4 pointer-events-none'}
                         `}
                         style={{
-                            marginBottom: '20px', // Space for launcher spacing
-                            boxShadow: bot.theme.common.shadow, // Use shadow from theme config
+                            width: bot.theme.chatWindow?.width || '380px',
+                            height: bot.theme.chatWindow?.height || '600px',
+                            marginBottom: '20px',
+                            boxShadow: bot.theme.common.shadow,
                             borderRadius: bot.theme.common.borderRadius,
                         }}
                     >
@@ -115,7 +140,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                         {/* Transparent Overlay for Click Capture */}
                         <div
                             className="absolute inset-0 z-10"
-                            onClick={(e) => {
+                            onClick={() => {
                                 // Heuristic: Calculate click position relative to iframe to guess element?
                                 // Actually, getting element-level selection inside an iframe from outside is hard cross-origin (even same-origin can be tricky with events)
                                 // For now, we unfortunately lose "Click-to-Select-Element" inside the iframe content unless we use postMessage FROM iframe.
@@ -135,32 +160,83 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                         />
                     </div>
 
-                    {/* Launcher */}
-                    <div
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedSection("launcher");
-                            setIsOpen(!isOpen);
-                        }}
-                        className={`
-                            absolute bottom-6 -right-19 w-[60px] h-[60px] rounded-full flex items-center justify-center shadow-lg cursor-pointer z-10
-                            transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]
-                            ${selectedSection === "launcher" ? "ring-4 ring-violet-500/50 scale-105" : "hover:scale-105"}
-                            hover:shadow-xl
-                        `}
-                        style={{
-                            backgroundColor: bot.theme.launcher.bgColor,
-                            fontFamily: bot.theme.common.fontFamily
-                        }}
-                    >
-                        {isOpen ? (
-                            <X className="w-7 h-7" style={{ color: bot.theme.launcher.iconColor }} />
-                        ) : bot.theme.launcher.icon ? (
-                            <div dangerouslySetInnerHTML={{ __html: bot.theme.launcher.icon }} className="flex items-center justify-center" style={{ color: bot.theme.launcher.iconColor }} />
-                        ) : (
-                            <Bot className="w-7 h-7" style={{ color: bot.theme.launcher.iconColor }} />
-                        )}
-                    </div>
+                    {/* Launcher — preview honours every launcher.* field including close-state. */}
+                    {(() => {
+                        const launcherSizePx = parseInt(bot.theme.launcher.size || "") || 60;
+                        const launcherIconSizePx = parseInt(bot.theme.launcher.iconSize || "") || 28;
+                        const launcherBg = isOpen
+                            ? (bot.theme.launcher.closeBgColor || bot.theme.launcher.bgColor)
+                            : bot.theme.launcher.bgColor;
+                        const launcherIconCol = isOpen
+                            ? (bot.theme.launcher.closeIconColor || bot.theme.launcher.iconColor)
+                            : bot.theme.launcher.iconColor;
+                        const launcherShape = bot.theme.launcher.borderRadius || "50%";
+                        const launcherBorderW = bot.theme.launcher.borderWidth || "0";
+                        const launcherBorderC = bot.theme.launcher.borderColor || "transparent";
+                        return (
+                            <div
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedSection("launcher");
+                                    setIsOpen(!isOpen);
+                                }}
+                                className={`
+                                    absolute bottom-6 -right-19 flex items-center justify-center shadow-lg cursor-pointer z-10
+                                    transition-all duration-200 ease-[cubic-bezier(0.16,1,0.3,1)]
+                                    ${selectedSection === "launcher" ? "scale-105" : "hover:scale-105"}
+                                    hover:shadow-xl
+                                `}
+                                style={{
+                                    width: `${launcherSizePx}px`,
+                                    height: `${launcherSizePx}px`,
+                                    borderRadius: launcherShape,
+                                    backgroundColor: launcherBg,
+                                    border: `${launcherBorderW} solid ${launcherBorderC}`,
+                                    fontFamily: bot.theme.common.fontFamily,
+                                }}
+                            >
+                                {isOpen ? (
+                                    bot.theme.launcher.closeIcon ? (
+                                        <div
+                                            dangerouslySetInnerHTML={{ __html: bot.theme.launcher.closeIcon }}
+                                            className="flex items-center justify-center"
+                                            style={{
+                                                color: launcherIconCol,
+                                                width: `${launcherIconSizePx}px`,
+                                                height: `${launcherIconSizePx}px`,
+                                            }}
+                                        />
+                                    ) : (
+                                        <X
+                                            style={{
+                                                color: launcherIconCol,
+                                                width: `${launcherIconSizePx}px`,
+                                                height: `${launcherIconSizePx}px`,
+                                            }}
+                                        />
+                                    )
+                                ) : bot.theme.launcher.icon ? (
+                                    <div
+                                        dangerouslySetInnerHTML={{ __html: bot.theme.launcher.icon }}
+                                        className="flex items-center justify-center"
+                                        style={{
+                                            color: launcherIconCol,
+                                            width: `${launcherIconSizePx}px`,
+                                            height: `${launcherIconSizePx}px`,
+                                        }}
+                                    />
+                                ) : (
+                                    <Bot
+                                        style={{
+                                            color: launcherIconCol,
+                                            width: `${launcherIconSizePx}px`,
+                                            height: `${launcherIconSizePx}px`,
+                                        }}
+                                    />
+                                )}
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
 
@@ -184,6 +260,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                 { id: "userMessage", label: "User Message", icon: User },
                                 { id: "inputArea", label: "Input Area & Footer", icon: Type },
                                 { id: "launcher", label: "Launcher Button", icon: MousePointerClick },
+                                { id: "advanced", label: "Advanced & Custom CSS", icon: Code },
                             ].map((item) => (
                                 <button
                                     key={item.id}
@@ -219,6 +296,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                     {selectedSection === "common" && "Global Settings"}
                                     {selectedSection === "inputArea" && "Input Area & Footer"}
                                     {selectedSection === "chatWindow" && "Chat Window"}
+                                    {selectedSection === "advanced" && "Advanced & Custom CSS"}
                                 </h3>
                             </div>
 
@@ -269,6 +347,161 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                                     onChange={(e) => updateTheme("header", "textColor", e.target.value)}
                                                     className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white uppercase font-mono"
                                                 />
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-zinc-800 my-4 pt-4">
+                                            <label className="block text-xs font-semibold text-zinc-300 mb-3">Header Icon</label>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Icon Color</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={bot.theme.header.iconColor || "#ffffff"}
+                                                            onChange={(e) => updateTheme("header", "iconColor", e.target.value)}
+                                                            className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.header.iconColor || "#ffffff"}
+                                                            onChange={(e) => updateTheme("header", "iconColor", e.target.value)}
+                                                            className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white uppercase font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Icon Background</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={bot.theme.header.iconBgColor || "#ffffff"}
+                                                            onChange={(e) => updateTheme("header", "iconBgColor", e.target.value)}
+                                                            className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.header.iconBgColor || ""}
+                                                            onChange={(e) => updateTheme("header", "iconBgColor", e.target.value)}
+                                                            placeholder="rgba(255,255,255,0.2)"
+                                                            className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-1.5">
+                                                        <label className="text-xs font-medium text-zinc-400">Icon Size</label>
+                                                        <span className="text-xs text-zinc-500 font-mono">
+                                                            {parseInt(bot.theme.header.iconSize || "") || 20}px
+                                                        </span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        min={12}
+                                                        max={36}
+                                                        value={parseInt(bot.theme.header.iconSize || "") || 20}
+                                                        onChange={(e) => updateTheme("header", "iconSize", `${e.target.value}px`)}
+                                                        className="w-full h-1.5 accent-violet-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Custom Header Icon (SVG)</label>
+                                                    <textarea
+                                                        value={bot.theme.header.icon || ""}
+                                                        onChange={(e) => updateTheme("header", "icon", e.target.value)}
+                                                        placeholder="Paste SVG code..."
+                                                        className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500 font-mono text-[10px] min-h-[60px]"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-zinc-800 my-4 pt-4">
+                                            <label className="block text-xs font-semibold text-zinc-300 mb-3">Subtitle (description)</label>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Subtitle Text</label>
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.header.subtitle ?? ""}
+                                                        onChange={(e) => updateTheme("header", "subtitle", e.target.value)}
+                                                        placeholder="Powered by Buildx"
+                                                        className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500"
+                                                    />
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Subtitle Color</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={bot.theme.header.subtitleColor || "#ffffff"}
+                                                            onChange={(e) => updateTheme("header", "subtitleColor", e.target.value)}
+                                                            className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.header.subtitleColor || ""}
+                                                            onChange={(e) => updateTheme("header", "subtitleColor", e.target.value)}
+                                                            placeholder="rgba(255,255,255,0.7)"
+                                                            className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div className="grid grid-cols-2 gap-2">
+                                                    <div>
+                                                        <label className="block text-[10px] font-medium text-zinc-400 mb-1">Font Size</label>
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.header.subtitleFont?.size ?? ""}
+                                                            onChange={(e) => updateTheme("header", "subtitleFont", { ...(bot.theme.header.subtitleFont || {}), size: e.target.value })}
+                                                            placeholder="12px"
+                                                            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-xs text-white font-mono"
+                                                        />
+                                                    </div>
+                                                    <div>
+                                                        <label className="block text-[10px] font-medium text-zinc-400 mb-1">Font Weight</label>
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.header.subtitleFont?.weight ?? ""}
+                                                            onChange={(e) => updateTheme("header", "subtitleFont", { ...(bot.theme.header.subtitleFont || {}), weight: e.target.value })}
+                                                            placeholder="400"
+                                                            className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-xs text-white font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[10px] font-medium text-zinc-400 mb-1">Font Family</label>
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.header.subtitleFont?.family ?? ""}
+                                                        onChange={(e) => updateTheme("header", "subtitleFont", { ...(bot.theme.header.subtitleFont || {}), family: e.target.value })}
+                                                        placeholder="Inter, sans-serif"
+                                                        className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-xs text-white font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-zinc-800 my-4 pt-4">
+                                            <label className="block text-xs font-semibold text-zinc-300 mb-3">Refresh Button</label>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Refresh Icon Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={bot.theme.header.refreshIconColor || bot.theme.header.textColor || "#ffffff"}
+                                                        onChange={(e) => updateTheme("header", "refreshIconColor", e.target.value)}
+                                                        className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.header.refreshIconColor || ""}
+                                                        onChange={(e) => updateTheme("header", "refreshIconColor", e.target.value)}
+                                                        placeholder="Defaults to header text color"
+                                                        className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                    />
+                                                </div>
+                                                <p className="text-[10px] text-zinc-500 mt-1">Toggle the button itself in <span className="text-violet-300">Advanced → Element visibility</span>.</p>
                                             </div>
                                         </div>
                                     </>
@@ -765,6 +998,121 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                                 placeholder="Paste SVG code here..."
                                                 className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500 font-mono text-[10px] min-h-[60px]"
                                             />
+                                            <p className="text-[10px] text-zinc-500 mt-1">Click the launcher in the preview to toggle and verify.</p>
+                                        </div>
+
+                                        <div className="border-t border-zinc-800 my-4 pt-4">
+                                            <label className="block text-xs font-semibold text-zinc-300 mb-3">Border</label>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Border Color</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={bot.theme.launcher.borderColor || "#000000"}
+                                                            onChange={(e) => updateTheme("launcher", "borderColor", e.target.value)}
+                                                            className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.launcher.borderColor || ""}
+                                                            onChange={(e) => updateTheme("launcher", "borderColor", e.target.value)}
+                                                            placeholder="transparent"
+                                                            className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <div className="flex items-center justify-between mb-1.5">
+                                                        <label className="text-xs font-medium text-zinc-400">Border Width</label>
+                                                        <span className="text-xs text-zinc-500 font-mono">
+                                                            {parseInt(bot.theme.launcher.borderWidth || "") || 0}px
+                                                        </span>
+                                                    </div>
+                                                    <input
+                                                        type="range"
+                                                        min={0}
+                                                        max={8}
+                                                        value={parseInt(bot.theme.launcher.borderWidth || "") || 0}
+                                                        onChange={(e) => updateTheme("launcher", "borderWidth", `${e.target.value}px`)}
+                                                        className="w-full h-1.5 accent-violet-500"
+                                                    />
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        {/* Sizing — sliders for size / icon size / offsets */}
+                                        <div className="border-t border-zinc-800 my-4 pt-4">
+                                            <label className="block text-xs font-semibold text-zinc-300 mb-3">Size & Position</label>
+                                            <div className="space-y-4">
+                                                {([
+                                                    { key: "size", label: "Button size", min: 40, max: 120, fallback: 60 },
+                                                    { key: "iconSize", label: "Icon size", min: 16, max: 56, fallback: 28 },
+                                                    { key: "offsetX", label: "Offset from side", min: 0, max: 80, fallback: 20 },
+                                                    { key: "offsetY", label: "Offset from top/bottom", min: 0, max: 80, fallback: 20 },
+                                                ] as const).map(({ key, label, min, max, fallback }) => {
+                                                    const raw = (bot.theme.launcher as Record<string, string | undefined>)?.[key];
+                                                    const px = parseInt(raw || "") || fallback;
+                                                    return (
+                                                        <div key={key}>
+                                                            <div className="flex items-center justify-between mb-1.5">
+                                                                <label className="text-xs font-medium text-zinc-400">{label}</label>
+                                                                <span className="text-xs text-zinc-500 font-mono">{px}px</span>
+                                                            </div>
+                                                            <input
+                                                                type="range"
+                                                                min={min}
+                                                                max={max}
+                                                                value={px}
+                                                                onChange={(e) => updateTheme("launcher", key, `${e.target.value}px`)}
+                                                                className="w-full h-1.5 accent-violet-500"
+                                                            />
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+
+                                        <div className="border-t border-zinc-800 my-4 pt-4">
+                                            <label className="block text-xs font-semibold text-zinc-300 mb-3">Close State (when widget is open)</label>
+                                            <div className="space-y-3">
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Close Button Background</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={bot.theme.launcher.closeBgColor || bot.theme.launcher.bgColor || "#8b5cf6"}
+                                                            onChange={(e) => updateTheme("launcher", "closeBgColor", e.target.value)}
+                                                            className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.launcher.closeBgColor || ""}
+                                                            onChange={(e) => updateTheme("launcher", "closeBgColor", e.target.value)}
+                                                            placeholder="Defaults to button color"
+                                                            className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-xs font-medium text-zinc-400 mb-2">Close Icon Color</label>
+                                                    <div className="flex gap-2">
+                                                        <input
+                                                            type="color"
+                                                            value={bot.theme.launcher.closeIconColor || bot.theme.launcher.iconColor || "#ffffff"}
+                                                            onChange={(e) => updateTheme("launcher", "closeIconColor", e.target.value)}
+                                                            className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                        />
+                                                        <input
+                                                            type="text"
+                                                            value={bot.theme.launcher.closeIconColor || ""}
+                                                            onChange={(e) => updateTheme("launcher", "closeIconColor", e.target.value)}
+                                                            placeholder="Defaults to icon color"
+                                                            className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -834,6 +1182,91 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                                 className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white uppercase font-mono"
                                             />
                                         </div>
+                                    </div>
+
+                                    {/* Chat-area icon (empty state) */}
+                                    <div className="border-t border-zinc-800 my-4 pt-4">
+                                        <label className="block text-xs font-semibold text-zinc-300 mb-3">Chat Area Icon</label>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Icon Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={bot.theme.chatWindow?.emptyStateIconColor || bot.theme.botMessage?.textColor || "#1f2937"}
+                                                        onChange={(e) => updateTheme("chatWindow", "emptyStateIconColor", e.target.value)}
+                                                        className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.chatWindow?.emptyStateIconColor || ""}
+                                                        onChange={(e) => updateTheme("chatWindow", "emptyStateIconColor", e.target.value)}
+                                                        placeholder="Defaults to bot text color"
+                                                        className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Icon Background</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={bot.theme.chatWindow?.emptyStateIconBgColor || bot.theme.botMessage?.bgColor || "#f3f4f6"}
+                                                        onChange={(e) => updateTheme("chatWindow", "emptyStateIconBgColor", e.target.value)}
+                                                        className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.chatWindow?.emptyStateIconBgColor || ""}
+                                                        onChange={(e) => updateTheme("chatWindow", "emptyStateIconBgColor", e.target.value)}
+                                                        placeholder="Defaults to bot bubble color"
+                                                        className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Custom Icon (SVG)</label>
+                                                <textarea
+                                                    value={bot.theme.chatWindow?.emptyStateIcon || ""}
+                                                    onChange={(e) => updateTheme("chatWindow", "emptyStateIcon", e.target.value)}
+                                                    placeholder="Paste SVG code..."
+                                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500 font-mono text-[10px] min-h-[60px]"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Widget size — slider in px (drives the iframe container) */}
+                                    <div className="border-t border-zinc-800 my-4 pt-4">
+                                        <label className="block text-xs font-semibold text-zinc-300 mb-3">Widget Size</label>
+                                        <div className="space-y-4">
+                                            {([
+                                                { key: "width", label: "Width", min: 280, max: 560, fallback: 380 },
+                                                { key: "height", label: "Height", min: 400, max: 900, fallback: 600 },
+                                            ] as const).map(({ key, label, min, max, fallback }) => {
+                                                const raw = (bot.theme.chatWindow as Record<string, string | undefined> | undefined)?.[key];
+                                                const px = parseInt(raw || "") || fallback;
+                                                return (
+                                                    <div key={key}>
+                                                        <div className="flex items-center justify-between mb-1.5">
+                                                            <label className="text-xs font-medium text-zinc-400">{label}</label>
+                                                            <span className="text-xs text-zinc-500 font-mono">{px}px</span>
+                                                        </div>
+                                                        <input
+                                                            type="range"
+                                                            min={min}
+                                                            max={max}
+                                                            value={px}
+                                                            onChange={(e) => updateTheme("chatWindow", key, `${e.target.value}px`)}
+                                                            className="w-full h-1.5 accent-violet-500"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                        <p className="text-[10px] text-zinc-500 mt-2">
+                                            Applied by <code className="text-violet-300">embed.js</code> when the widget is loaded on a host site.
+                                        </p>
                                     </div>
                                 </>
                             )}
@@ -907,6 +1340,51 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                                     />
                                                 </div>
                                             </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Border Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={bot.theme.inputArea?.borderColor || "#e4e4e7"}
+                                                        onChange={(e) => updateTheme("inputArea", "borderColor", e.target.value)}
+                                                        className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.inputArea?.borderColor || ""}
+                                                        onChange={(e) => updateTheme("inputArea", "borderColor", e.target.value)}
+                                                        placeholder="transparent"
+                                                        className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white font-mono"
+                                                    />
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Placeholder Text</label>
+                                                <input
+                                                    type="text"
+                                                    value={bot.theme.inputArea?.placeholderText ?? ""}
+                                                    onChange={(e) => updateTheme("inputArea", "placeholderText", e.target.value)}
+                                                    placeholder="Type a message..."
+                                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-2">Placeholder Color</label>
+                                                <div className="flex gap-2">
+                                                    <input
+                                                        type="color"
+                                                        value={bot.theme.inputArea?.placeholderColor || "#a1a1aa"}
+                                                        onChange={(e) => updateTheme("inputArea", "placeholderColor", e.target.value)}
+                                                        className="w-10 h-10 rounded cursor-pointer border-0 p-0 bg-transparent"
+                                                    />
+                                                    <input
+                                                        type="text"
+                                                        value={bot.theme.inputArea?.placeholderColor || "#a1a1aa"}
+                                                        onChange={(e) => updateTheme("inputArea", "placeholderColor", e.target.value)}
+                                                        className="flex-1 px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white uppercase font-mono"
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="border-t border-zinc-800 my-4 pt-4">
@@ -959,6 +1437,77 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                                     </div>
                                 </>
                             )}
+
+                            {/* ADVANCED — visibility toggles, text overrides, launcher sliders */}
+                            {selectedSection === "advanced" && (
+                                <div className="space-y-6">
+                                    {/* Element visibility toggles */}
+                                    <div>
+                                        <label className="block text-xs font-semibold text-zinc-300 mb-3">Element visibility</label>
+                                        <div className="space-y-2">
+                                            {([
+                                                { key: "refreshButton", label: "Refresh button (header)" },
+                                                { key: "branding", label: "Header subtitle / branding" },
+                                                { key: "welcomeSubtitle", label: "Welcome subtitle (empty state)" },
+                                                { key: "emptyStateIcon", label: "Empty-state icon" },
+                                            ] as const).map(({ key, label }) => {
+                                                const shown = isElementShown(key);
+                                                return (
+                                                    <button
+                                                        key={key}
+                                                        type="button"
+                                                        onClick={() => setElementShow(key, !shown)}
+                                                        className="w-full flex items-center justify-between px-3 py-2.5 rounded-lg bg-zinc-950 border border-zinc-800 hover:border-zinc-700 text-left"
+                                                    >
+                                                        <span className="text-xs text-zinc-300">{label}</span>
+                                                        <span className={`relative w-10 h-5 rounded-full transition-colors ${shown ? "bg-emerald-500" : "bg-zinc-700"}`}>
+                                                            <span className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-transform ${shown ? "left-5" : "left-0.5"}`} />
+                                                        </span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Customisable text strings */}
+                                    <div className="border-t border-zinc-800 pt-4">
+                                        <label className="block text-xs font-semibold text-zinc-300 mb-3">Text overrides</label>
+                                        <div className="space-y-3">
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Header subtitle</label>
+                                                <input
+                                                    type="text"
+                                                    value={bot.theme.header?.subtitle ?? ""}
+                                                    onChange={(e) => updateTheme("header", "subtitle", e.target.value)}
+                                                    placeholder="Powered by Buildx"
+                                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Welcome subtitle</label>
+                                                <input
+                                                    type="text"
+                                                    value={bot.theme.chatWindow?.welcomeSubtitle ?? ""}
+                                                    onChange={(e) => updateTheme("chatWindow", "welcomeSubtitle", e.target.value)}
+                                                    placeholder="Ask me anything!"
+                                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-medium text-zinc-400 mb-1.5">Input placeholder</label>
+                                                <input
+                                                    type="text"
+                                                    value={bot.theme.inputArea?.placeholderText ?? ""}
+                                                    onChange={(e) => updateTheme("inputArea", "placeholderText", e.target.value)}
+                                                    placeholder="Type a message..."
+                                                    className="w-full px-3 py-2 bg-zinc-950 border border-zinc-700 rounded-lg text-sm text-white focus:outline-none focus:border-violet-500"
+                                                />
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            )}
                         </div>
                         // </div>
                     )}
@@ -977,7 +1526,7 @@ export function DesignTab({ bot, setBot, handleCopyCode, copied }: DesignTabProp
                         </button>
                     </div>
                     <code className="block bg-black p-2 rounded text-[10px] text-zinc-500 font-mono truncate">
-                        &lt;script src="..." /&gt;
+                        &lt;script src=&quot;...&quot; /&gt;
                     </code>
                 </div>
             </div>

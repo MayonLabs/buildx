@@ -1,15 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Types } from "mongoose";
 import dbConnect from "@/lib/db";
-import { Bot } from "@/models";
-import { getGenAI, getEmbedding } from "@/lib/gemini";
+import { Bot, ITranscriptEntry } from "@/models";
+import {
+    getGenAI,
+    getEmbedding,
+    buildLeadCaptureTool,
+    buildLeadCapturePromptFragment,
+    LEAD_CAPTURE_TOOL_NAME,
+} from "@/lib/gemini";
 import { checkRateLimit } from "@/lib/rate-limit";
 import { getVectorProvider } from "@/lib/vector";
 import { getGlobalSettings } from "@/lib/vector/settings-cache";
+import { persistLead, LeadCaptureArgs } from "@/lib/leads";
+import type { Tool, FunctionCall, Part } from "@google/generative-ai";
+
+const MAX_TOOL_LOOP_ITERATIONS = 3;
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
-        const { message, botId, history = [] } = body;
+        const { message, botId, history = [], conversationId } = body;
 
         // Rate limiting
         const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || "unknown";
@@ -39,12 +50,20 @@ export async function POST(request: NextRequest) {
         }
 
         const botConfig = botDoc as {
-            _id: any;
+            _id: Types.ObjectId;
             systemPrompt: string;
             aiModel: string;
             temperature: number;
             allowedDomains: string[];
             isActive: boolean;
+            tools?: {
+                leadCapture?: {
+                    enabled?: boolean;
+                    requireFields?: ("name" | "email" | "phone")[];
+                    qualificationPrompt?: string;
+                    dedupWindowHours?: number;
+                };
+            };
         };
 
         if (!botConfig.isActive) {
@@ -94,10 +113,30 @@ export async function POST(request: NextRequest) {
             console.error("RAG error (continuing without context):", ragError);
         }
 
+        // Lead-capture tool wiring (only if bot has it enabled and conversationId present)
+        const leadCapture = botConfig.tools?.leadCapture;
+        const leadCaptureEnabled = !!(leadCapture?.enabled && conversationId);
+        const requireFields = leadCapture?.requireFields?.length
+            ? leadCapture.requireFields
+            : ["email" as const];
+        const dedupWindowHours = leadCapture?.dedupWindowHours ?? 24;
+
+        const tools: Tool[] | undefined = leadCaptureEnabled
+            ? [{ functionDeclarations: [buildLeadCaptureTool(requireFields)] }]
+            : undefined;
+
+        if (leadCaptureEnabled) {
+            systemPromptText += buildLeadCapturePromptFragment(
+                requireFields,
+                leadCapture?.qualificationPrompt
+            );
+        }
+
         // Build Gemini model with system instruction (native SDK — no LangChain)
         const model = getGenAI(geminiKey).getGenerativeModel({
             model: botConfig.aiModel || "gemini-2.5-flash",
             systemInstruction: `${systemPromptText}\n\nIMPORTANT: Format your response using Markdown. Use bold for key terms, bullet points for lists, and code blocks for any technical syntax.`,
+            tools,
         });
 
         const chat = model.startChat({
@@ -110,12 +149,56 @@ export async function POST(request: NextRequest) {
             },
         });
 
-        const result = await chat.sendMessage(message);
+        // Tool-call loop — bounded to keep latency + cost predictable.
+        let result = await chat.sendMessage(message);
+        let leadCaptured = false;
+        let iter = 0;
+
+        while (iter < MAX_TOOL_LOOP_ITERATIONS) {
+            const calls: FunctionCall[] = result.response.functionCalls() || [];
+            if (calls.length === 0) break;
+
+            const responseParts: Part[] = [];
+            for (const call of calls) {
+                if (call.name === LEAD_CAPTURE_TOOL_NAME && leadCaptureEnabled) {
+                    const outcome = await handleCaptureLead(
+                        botConfig._id,
+                        conversationId,
+                        call.args as LeadCaptureArgs,
+                        message,
+                        history,
+                        request,
+                        requireFields,
+                        dedupWindowHours,
+                        leadCaptured
+                    );
+                    if (outcome.captured) leadCaptured = true;
+                    responseParts.push({
+                        functionResponse: {
+                            name: call.name,
+                            response: outcome.response,
+                        },
+                    });
+                } else {
+                    responseParts.push({
+                        functionResponse: {
+                            name: call.name,
+                            response: { error: `Unknown tool: ${call.name}` },
+                        },
+                    });
+                }
+            }
+
+            result = await chat.sendMessage(responseParts);
+            iter++;
+        }
+
         const responseText = result.response.text();
 
         return NextResponse.json({
             message: responseText,
             model: botConfig.aiModel,
+            leadCaptured,
         });
     } catch (error) {
         console.error("Chat error:", error);
@@ -139,5 +222,64 @@ export async function POST(request: NextRequest) {
             { error: "Failed to generate response" },
             { status: 500 }
         );
+    }
+}
+
+async function handleCaptureLead(
+    botId: Types.ObjectId,
+    conversationId: string,
+    args: LeadCaptureArgs,
+    currentMessage: string,
+    history: { role: string; content: string }[],
+    request: NextRequest,
+    requireFields: ("name" | "email" | "phone")[],
+    dedupWindowHours: number,
+    alreadyCaptured: boolean
+): Promise<{
+    captured: boolean;
+    response: { ok: boolean; deduped?: boolean; reason?: string; error?: string };
+}> {
+    // Layer 1.5 — server-side single-call enforcement within a request.
+    if (alreadyCaptured) {
+        return {
+            captured: false,
+            response: { ok: true, deduped: true, reason: "already-captured-in-request" },
+        };
+    }
+
+    const transcript: ITranscriptEntry[] = [
+        ...history.map(h => ({
+            role: (h.role === "assistant" ? "assistant" : "user") as "user" | "assistant",
+            content: h.content,
+            ts: new Date(),
+        })),
+        { role: "user" as const, content: currentMessage, ts: new Date() },
+    ];
+
+    try {
+        const result = await persistLead(
+            botId,
+            conversationId,
+            args,
+            transcript,
+            request,
+            requireFields,
+            dedupWindowHours
+        );
+        return {
+            captured: true,
+            response: {
+                ok: true,
+                deduped: result.deduped,
+                reason: result.reason,
+            },
+        };
+    } catch (err) {
+        const error = err instanceof Error ? err.message : "Failed to save lead";
+        console.error("Lead capture error:", err);
+        return {
+            captured: false,
+            response: { ok: false, error },
+        };
     }
 }

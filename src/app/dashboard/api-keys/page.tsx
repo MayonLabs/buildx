@@ -1,18 +1,14 @@
 "use client";
 
 import { Globe, Copy, Check, AlertTriangle } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
 export default function ApiKeysPage() {
-    const [origin, setOrigin] = useState("https://your-domain.com");
+    const [origin] = useState(() =>
+        typeof window !== "undefined" ? window.location.origin : "https://your-domain.com"
+    );
     const [copied, setCopied] = useState(false);
     const [activeTab, setActiveTab] = useState<"curl" | "js" | "python">("curl");
-
-    useEffect(() => {
-        if (typeof window !== 'undefined') {
-            setOrigin(window.location.origin);
-        }
-    }, []);
 
     const getCodeSnippet = () => {
         switch (activeTab) {
@@ -139,7 +135,7 @@ print(response.json()["message"])`;
                                     <div className="flex items-start gap-2 p-3 bg-amber-500/5 rounded-lg border border-amber-500/10">
                                         <AlertTriangle className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
                                         <p className="text-xs text-amber-500/90 leading-relaxed">
-                                            <span className="font-semibold">Important:</span> If you have configured "Allowed Domains" for your bot, direct API calls (like curl) will utilize server-side checks and may be blocked without a valid Origin header. Leave "Allowed Domains" empty to allow access from anywhere.
+                                            <span className="font-semibold">Important:</span> If you have configured &quot;Allowed Domains&quot; for your bot, direct API calls (like curl) will utilize server-side checks and may be blocked without a valid Origin header. Leave &quot;Allowed Domains&quot; empty to allow access from anywhere.
                                         </p>
                                     </div>
                                 </div>
@@ -160,7 +156,7 @@ print(response.json()["message"])`;
                                                     <code className="text-xs text-blue-400 font-mono">message</code>
                                                     <span className="text-[10px] text-red-400 border border-red-500/20 px-1.5 rounded uppercase">Required</span>
                                                 </div>
-                                                <p className="text-[11px] text-zinc-500">The user's input text.</p>
+                                                <p className="text-[11px] text-zinc-500">The user&apos;s input text.</p>
                                             </div>
                                             <div className="p-2 rounded bg-zinc-800/50 border border-zinc-800">
                                                 <div className="flex justify-between items-center mb-1">

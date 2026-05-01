@@ -8,8 +8,8 @@ import { getGlobalSettings } from "@/lib/vector/settings-cache";
 import type { VectorChunk } from "@/lib/vector";
 import { extractText, getDocumentProxy } from "unpdf";
 
-// @ts-ignore
-const mammoth = require("mammoth");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const mammoth = require("mammoth") as { extractRawText: (opts: { buffer: Buffer }) => Promise<{ value: string }> };
 
 function splitTextRecursive(text: string, chunkSize = 1000, chunkOverlap = 200): string[] {
     if (text.length <= chunkSize) return [text];
@@ -18,7 +18,7 @@ function splitTextRecursive(text: string, chunkSize = 1000, chunkOverlap = 200):
     let start = 0;
 
     while (start < text.length) {
-        let end = start + chunkSize;
+        const end = start + chunkSize;
         if (end >= text.length) {
             chunks.push(text.slice(start));
             break;

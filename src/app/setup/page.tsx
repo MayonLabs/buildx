@@ -71,7 +71,7 @@ export default function SetupPage() {
 
                             <div className="prose prose-invert max-w-none text-zinc-400 space-y-6">
                                 <p>
-                                    Create a <code className="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-violet-300">.env</code> in your project, OR set these in your hosting provider's <strong>Settings</strong> (e.g., Vercel).
+                                    Create a <code className="bg-zinc-900 border border-zinc-800 px-1.5 py-0.5 rounded text-violet-300">.env</code> in your project, OR set these in your hosting provider&apos;s <strong>Settings</strong> (e.g., Vercel).
                                     These variables are required for the app to function.
                                 </p>
 

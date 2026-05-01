@@ -27,5 +27,7 @@ export interface IVectorProvider {
   upsert(chunks: VectorChunk[]): Promise<void>;
   query(botId: string, queryEmbedding: number[], topK: number): Promise<RetrievedChunk[]>;
   delete(botId: string, sourceId: string): Promise<void>;
+  // Wipe every chunk owned by a bot — used on bot deletion.
+  deleteByBot(botId: string): Promise<void>;
   testConnection(): Promise<{ success: boolean; message: string }>;
 }

@@ -41,6 +41,7 @@ export class UpstashVectorProvider implements IVectorProvider {
     });
 
     return results.map(r => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       content: (r.metadata as any)?.content || "",
       score: r.score,
     }));
@@ -55,6 +56,21 @@ export class UpstashVectorProvider implements IVectorProvider {
       topK: 10000,
       includeMetadata: false,
       filter: `sourceId = '${sourceId}'`,
+    });
+    const ids = results.map(r => r.id as string);
+    if (ids.length > 0) {
+      await idx.delete(ids);
+    }
+  }
+
+  async deleteByBot(botId: string): Promise<void> {
+    const idx = this.index();
+    const dummyVector = new Array(768).fill(0);
+    const results = await idx.query({
+      vector: dummyVector,
+      topK: 10000,
+      includeMetadata: false,
+      filter: `botId = '${botId}'`,
     });
     const ids = results.map(r => r.id as string);
     if (ids.length > 0) {

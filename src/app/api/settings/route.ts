@@ -6,18 +6,18 @@ import { invalidateSettingsCache } from "@/lib/vector/settings-cache";
 import { encryptValue, decryptValue } from "@/lib/encrypt";
 import { QdrantVectorProvider } from "@/lib/vector/providers/qdrant";
 
-const VALID_PROVIDERS = ["qdrant"] as const;
+type ProviderConfig = Record<string, { apiKey?: string; url?: string; indexName?: string }>;
 
-function decryptConfigs(configs: Record<string, any>): Record<string, any> {
-    const out: Record<string, any> = {};
+function decryptConfigs(configs: ProviderConfig): ProviderConfig {
+    const out: ProviderConfig = {};
     for (const [provider, cfg] of Object.entries(configs)) {
         out[provider] = { ...cfg, apiKey: cfg.apiKey ? decryptValue(cfg.apiKey) : "" };
     }
     return out;
 }
 
-function encryptConfigs(configs: Record<string, any>): Record<string, any> {
-    const out: Record<string, any> = {};
+function encryptConfigs(configs: ProviderConfig): ProviderConfig {
+    const out: ProviderConfig = {};
     for (const [provider, cfg] of Object.entries(configs)) {
         out[provider] = { ...cfg, apiKey: cfg.apiKey ? encryptValue(cfg.apiKey) : "" };
     }
@@ -36,8 +36,9 @@ export async function GET() {
         const activeVectorProvider = "qdrant";
 
         // Merge legacy vectorDb into vectorDbConfigs for backward compat
-        let vectorDbConfigs: Record<string, any> = settings?.vectorDbConfigs || {};
+        let vectorDbConfigs: ProviderConfig = (settings?.vectorDbConfigs as ProviderConfig) || {};
         if (settings?.vectorDb && Object.keys(vectorDbConfigs).length === 0) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             const { provider, ...rest } = (settings.vectorDb as any) || {};
             if (provider && rest) vectorDbConfigs = { [provider]: rest };
         }
