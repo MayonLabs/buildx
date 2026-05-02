@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Users, Search, ChevronLeft, ChevronRight, Mail, Phone, ExternalLink } from "lucide-react";
@@ -39,6 +39,14 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 export default function LeadsPage() {
+    return (
+        <Suspense fallback={<div className="p-8 animate-pulse space-y-3">{[1,2,3,4,5].map(i=><div key={i} className="h-12 bg-zinc-800 rounded-lg"/>)}</div>}>
+            <LeadsContent />
+        </Suspense>
+    );
+}
+
+function LeadsContent() {
     const searchParams = useSearchParams();
     const initialBotId = searchParams.get("botId") || "";
     const [leads, setLeads] = useState<LeadRow[]>([]);
